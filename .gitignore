@@ -1,0 +1,20 @@
+# Ignore everything by default.
+*
+
+# Track essential files.
+!.gitignore
+!README.md
+
+# Track Jupyter notebooks.
+!notebooks/
+notebooks/*
+!notebooks/*.ipynb
+
+# Ignore datasets.
+data/
+**/data/
+
+# Ignore local environments and secrets.
+.venv/
+.env
+.ipynb_checkpoints/
