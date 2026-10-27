@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "petsafe-plants"
+version = "0.1.0"
+description = "Reproducible plant-export exploration and held-out evaluation for PetSafe Plants"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "torch>=2.4",
+  "torchvision>=0.19",
+  "pandas>=2.2",
+  "numpy>=1.26",
+  "matplotlib>=3.8",
+  "seaborn>=0.13",
+  "pillow>=10",
+  "scikit-learn>=1.5",
+]
+
+[project.optional-dependencies]
+api = [
+  "fastapi>=0.115",
+  "huggingface-hub>=0.26",
+  "meta-sam-parser>=0.1",
+  "openai>=1.100",
+  "python-multipart>=0.0.9",
+  "transformers>=4.45",
+  "uvicorn[standard]>=0.30",
+]
+
+[dependency-groups]
+dev = ["jupyterlab>=4", "ipykernel>=6", "pytest>=8", "ruff>=0.9"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/petsafe"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+extend-exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

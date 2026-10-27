@@ -1,0 +1,24 @@
+services:
+  api:
+    build:
+      context: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      MODEL_API_KEY: ${MODEL_API_KEY:?Set MODEL_API_KEY in .env}
+      HF_TOKEN: ${HF_TOKEN:-}
+      PETSAFE_RUNS_DIR: /models
+      PETSAFE_SPARK_MAX_COMPLETION_TOKENS: ${PETSAFE_SPARK_MAX_COMPLETION_TOKENS:-1200}
+      PETSAFE_CORS_ORIGINS: ${PETSAFE_CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      HF_HOME: /cache/huggingface
+      TORCH_HOME: /cache/torch
+    volumes:
+      - type: bind
+        source: ${PETSAFE_RUNS_HOST_DIR:?Set PETSAFE_RUNS_HOST_DIR in .env}
+        target: /models
+        read_only: true
+      - model-cache:/cache
+    restart: unless-stopped
+
+volumes:
+  model-cache:

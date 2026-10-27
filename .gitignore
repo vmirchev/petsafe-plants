@@ -4,15 +4,33 @@
 # Track essential files.
 !.gitignore
 !README.md
+!pyproject.toml
+!.env.example
+!Dockerfile
+!.dockerignore
+!compose.yaml
+!web/
+!web/**
 
 # Track Jupyter notebooks.
 !notebooks/
 notebooks/*
 !notebooks/*.ipynb
 
+# Track the inference API package.
+!src/
+!src/**
+src/**/__pycache__/
+src/**/*.pyc
+
 # Ignore datasets.
+samples/
 data/
 **/data/
+# Keep the curated reference table; raw and generated data remain ignored.
+!data/
+!data/toxicity/
+!data/toxicity/plant_toxicity.json
 
 # Ignore local environments and secrets.
 .venv/

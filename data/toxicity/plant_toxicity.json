@@ -1,0 +1,1954 @@
+{
+  "schema_version": "1.0.0",
+  "created_date": "2026-10-27",
+  "last_reviewed_date": "2026-10-27",
+  "intended_use": "Reference data for cat-related plant toxicity lookup after a plant has been identified. Not a diagnostic or emergency-care tool.",
+  "status_definitions": {
+    "toxic": "The cited source explicitly lists the matched plant taxon as toxic to cats.",
+    "non_toxic": "The cited source explicitly lists the matched plant taxon as non-toxic to cats. This is not a guarantee that ingestion cannot cause illness. ASPCA-listed non-toxic entries are reference classifications, not a guarantee against irritation or illness.",
+    "unknown": "The source does not establish a class-wide status, or the class-to-source taxon match is too broad or uncertain. Do not interpret as safe."
+  },
+  "general_note": "Toxicity depends on the plant taxon and exposure. Common names can refer to different plants. If ingestion is suspected, contact a veterinarian or animal poison-control service; do not rely on this file for treatment decisions.",
+  "sources": {
+    "aspca_cat_list": {
+      "publisher": "ASPCA Animal Poison Control",
+      "title": "Toxic and Non-Toxic Plant List — Cats",
+      "url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+      "accessed_date": "2026-10-27"
+    },
+    "aspca_plant_profiles": {
+      "publisher": "ASPCA Animal Poison Control",
+      "title": "Toxic and Non-toxic Plant Profiles",
+      "url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/",
+      "accessed_date": "2026-10-27"
+    },
+    "aspca_succulent_article": {
+      "publisher": "ASPCA Animal Poison Control",
+      "title": "Are Succulents Safe to Have Around Pets?",
+      "url": "https://www.aspca.org/news/are-succulents-safe-have-around-pets",
+      "accessed_date": "2026-10-27"
+    },
+    "aspca_plant_explainer": {
+      "publisher": "ASPCA Animal Poison Control",
+      "title": "Do You Know Which Flowers and Plants are Toxic to Pets? Our Experts Explain!",
+      "url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+      "accessed_date": "2026-10-27"
+    }
+  },
+  "plants": [
+    {
+      "class_name": "aglaonema",
+      "scientific_name": "Aglaonema spp.",
+      "aliases": [
+        "Chinese evergreen"
+      ],
+      "taxonomic_scope": "Genus-level dataset class; the ASPCA listing specifically identifies Aglaonema modestum.",
+      "toxicity_status": "unknown",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Chinese Evergreen; Aglaonema modestum; listed among plants toxic to cats",
+          "evidence_taxon": "Aglaonema modestum",
+          "evidence_status": "toxic",
+          "match_scope": "partial; do not generalize the one listed species to every Aglaonema species"
+        }
+      ],
+      "review_note": "Keep as unknown at the model's genus-level granularity. Treat a possible match conservatively because a species in this genus is listed toxic."
+    },
+    {
+      "class_name": "aloe vera",
+      "scientific_name": "Aloe vera",
+      "aliases": [
+        "Aloe",
+        "Barbados aloe"
+      ],
+      "taxonomic_scope": "Species-level match.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Aloe; Aloe vera; listed among plants toxic to cats",
+          "evidence_taxon": "Aloe vera",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ],
+      "review_note": "The ASPCA list groups Aloe vera under the common name Aloe."
+    },
+    {
+      "class_name": "chamaedorea elegans",
+      "scientific_name": "Chamaedorea elegans",
+      "aliases": [
+        "Bamboo palm",
+        "Parlor palm"
+      ],
+      "taxonomic_scope": "Species-level match.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Bamboo Palm; Chamaedorea elegans; listed under plants non-toxic to cats",
+          "evidence_taxon": "Chamaedorea elegans",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "chlorophytum comosum",
+      "scientific_name": "Chlorophytum comosum",
+      "aliases": [
+        "Spider plant",
+        "Ribbon plant",
+        "Spider ivy"
+      ],
+      "taxonomic_scope": "Species-level match.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_plant_profiles",
+          "source_match": "Spider Plant; Chlorophytum comosum; explicitly non-toxic to cats",
+          "evidence_taxon": "Chlorophytum comosum",
+          "evidence_status": "non_toxic",
+          "match_scope": "species",
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/spider-plant"
+        }
+      ]
+    },
+    {
+      "class_name": "chrysanthemum",
+      "scientific_name": "Chrysanthemum spp.",
+      "aliases": [
+        "Mum",
+        "Daisy"
+      ],
+      "taxonomic_scope": "Genus-level match; ASPCA lists Chrysanthemum spp. and many varieties.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Chrysanthemum (Daisy, Mum; many varieties); Chrysanthemum spp.; listed among plants toxic to cats",
+          "evidence_taxon": "Chrysanthemum spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "crassula ovata",
+      "scientific_name": "Crassula ovata",
+      "aliases": [
+        "Jade plant",
+        "Lucky plant",
+        "Money plant"
+      ],
+      "taxonomic_scope": "Species-level match. Common names may also refer to other species.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_succulent_article",
+          "source_match": "ASPCA explicitly identifies Crassula ovata (jade plant) as toxic to pets",
+          "evidence_taxon": "Crassula ovata",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "cyclamen",
+      "scientific_name": "Cyclamen spp.",
+      "aliases": [
+        "Sowbread"
+      ],
+      "taxonomic_scope": "Genus-level match.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Cyclamen (Sowbread); Cyclamen spp.; listed among plants toxic to cats",
+          "evidence_taxon": "Cyclamen spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "dieffenbachia",
+      "scientific_name": "Dieffenbachia spp.",
+      "aliases": [
+        "Dumb cane",
+        "Charming dieffenbachia"
+      ],
+      "taxonomic_scope": "Genus-level dataset class; ASPCA lists Dieffenbachia and related named entries.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Dieffenbachia / Dumbcane; Dieffenbachia; listed among plants toxic to cats",
+          "evidence_taxon": "Dieffenbachia",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "epipremnum aureum",
+      "scientific_name": "Epipremnum aureum",
+      "aliases": [
+        "Devil's ivy",
+        "Golden pothos",
+        "Pothos",
+        "Taro vine"
+      ],
+      "taxonomic_scope": "Species-level match.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Devils Ivy; Epipremnum aureum; listed among plants toxic to cats",
+          "evidence_taxon": "Epipremnum aureum",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "euphorbia pulcherrima",
+      "scientific_name": "Euphorbia pulcherrima",
+      "aliases": [
+        "Poinsettia"
+      ],
+      "taxonomic_scope": "Species-level match.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_plant_profiles",
+          "source_match": "Poinsettia; Euphorbia pulcherrima; toxic to cats",
+          "evidence_taxon": "Euphorbia pulcherrima",
+          "evidence_status": "toxic",
+          "match_scope": "species",
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/poinsettia"
+        }
+      ],
+      "source_qualification": "ASPCA describes the sap as irritating and notes that poinsettia toxicity is generally over-rated; retain the toxic flag without implying that every exposure is severe."
+    },
+    {
+      "class_name": "hemerocallis",
+      "scientific_name": "Hemerocallis spp.",
+      "aliases": [
+        "Day lily",
+        "Daylily"
+      ],
+      "taxonomic_scope": "Genus-level match; ASPCA lists Hemerocallis spp.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Day Lilies (many varieties); Hemerocallis spp.; listed among plants toxic to cats",
+          "evidence_taxon": "Hemerocallis spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "monstera deliciosa",
+      "scientific_name": "Monstera deliciosa",
+      "aliases": [
+        "Cutleaf philodendron",
+        "Swiss cheese plant",
+        "Hurricane plant"
+      ],
+      "taxonomic_scope": "Species-level match.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Cutleaf Philodendron / Swiss Cheese Plant; Monstera deliciosa; listed among plants toxic to cats",
+          "evidence_taxon": "Monstera deliciosa",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "narcissus",
+      "scientific_name": "Narcissus spp.",
+      "aliases": [
+        "Daffodil",
+        "Jonquil",
+        "Paper white"
+      ],
+      "taxonomic_scope": "Genus-level match; ASPCA lists Narcissus spp.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Daffodil / Narcissus; Narcissus spp.; listed among plants toxic to cats",
+          "evidence_taxon": "Narcissus spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "nephrolepis exaltata",
+      "scientific_name": "Nephrolepis exaltata",
+      "aliases": [
+        "Boston fern"
+      ],
+      "taxonomic_scope": "Species-level dataset label; ASPCA profile uses the Boston fern cultivar name Nephrolepis exalta bostoniensis, and its expert explainer lists Nephrolepis exaltata.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_plant_profiles",
+          "source_match": "Boston Fern; listed non-toxic to cats",
+          "evidence_taxon": "Nephrolepis exalta bostoniensis",
+          "evidence_status": "non_toxic",
+          "match_scope": "cultivar/variety; species-level corroboration in ASPCA explainer",
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/boston-fern"
+        },
+        {
+          "source_id": "aspca_plant_explainer",
+          "source_match": "Boston Fern — Nephrolepis exaltata — listed among non-toxic plants",
+          "evidence_taxon": "Nephrolepis exaltata",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "phalaenopsis",
+      "scientific_name": "Phalaenopsis spp.",
+      "aliases": [
+        "Moth orchid",
+        "Moon orchid"
+      ],
+      "taxonomic_scope": "Genus-level match. ASPCA profile identifies Phalaenopsis sp.; its expert explainer also lists orchids as non-toxic.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_plant_profiles",
+          "source_match": "Phalaenopsis Orchid; Phalaenopsis sp.; non-toxic to cats",
+          "evidence_taxon": "Phalaenopsis sp.",
+          "evidence_status": "non_toxic",
+          "match_scope": "genus",
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/phalaenopsis-orchid"
+        }
+      ]
+    },
+    {
+      "class_name": "philodendron hederaceum",
+      "scientific_name": "Philodendron hederaceum",
+      "aliases": [
+        "Heartleaf philodendron",
+        "Cordatum",
+        "Sweetheart plant"
+      ],
+      "taxonomic_scope": "Species-level class label. ASPCA's cat list has a direct Heartleaf Philodendron entry naming P. hederaceum; its Cordatum profile uses the older/synonym name P. oxycardium.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Heartleaf Philodendron (Cordatum, Sweetheart Plant); Philodendron hederaceum; listed among plants toxic to cats",
+          "evidence_taxon": "Philodendron hederaceum",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        },
+        {
+          "source_id": "aspca_plant_profiles",
+          "source_match": "Cordatum profile lists Philodendron oxycardium as toxic to cats",
+          "evidence_taxon": "Philodendron oxycardium",
+          "evidence_status": "toxic",
+          "match_scope": "related naming record",
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/cordatum"
+        }
+      ]
+    },
+    {
+      "class_name": "saintpaulia",
+      "scientific_name": "Streptocarpus sect. Saintpaulia",
+      "aliases": [
+        "African violet",
+        "Saintpaulia spp."
+      ],
+      "taxonomic_scope": "Section-level taxonomic name; ASPCA cat list uses Saintpaulia spp. and its recent explainer uses Streptocarpus sect. Saintpaulia.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "African Violet; Saintpaulia spp.; listed under plants non-toxic to cats",
+          "evidence_taxon": "Saintpaulia spp.",
+          "evidence_status": "non_toxic",
+          "match_scope": "genus/section"
+        },
+        {
+          "source_id": "aspca_plant_explainer",
+          "source_match": "African Violet — Streptocarpus sect. Saintpaulia — listed among non-toxic plants",
+          "evidence_taxon": "Streptocarpus sect. Saintpaulia",
+          "evidence_status": "non_toxic",
+          "match_scope": "section"
+        }
+      ]
+    },
+    {
+      "class_name": "spathiphyllum",
+      "scientific_name": "Spathiphyllum spp.",
+      "aliases": [
+        "Peace lily",
+        "Mauna Loa peace lily"
+      ],
+      "taxonomic_scope": "Genus-level match; ASPCA entry is Spathiphyllum.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Peace Lily / Mauna Loa Peace Lily; Spathiphyllum; listed among plants toxic to cats",
+          "evidence_taxon": "Spathiphyllum",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "alocasia",
+      "scientific_name": "Alocasia spp.",
+      "aliases": [
+        "elephant ear"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Alocasia spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Alocasia (Elephant's Ear); listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Alocasia spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "amaryllis",
+      "scientific_name": "Amaryllis spp.",
+      "aliases": [
+        "belladonna lily",
+        "naked lady"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Amaryllis spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Amaryllis; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Amaryllis spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "anthurium",
+      "scientific_name": "Anthurium scherzeranum",
+      "aliases": [
+        "flamingo flower",
+        "flamingo lily",
+        "tail flower"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Anthurium scherzeranum.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Flamingo Flower; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Anthurium scherzeranum",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "arrowhead vine",
+      "scientific_name": "Syngonium podophyllum",
+      "aliases": [
+        "nephthytis",
+        "arrowhead plant"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Syngonium podophyllum.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Arrow-Head Vine; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Syngonium podophyllum",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "azalea",
+      "scientific_name": "Rhododendron spp.",
+      "aliases": [
+        "rhododendron"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Rhododendron spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Azalea; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Rhododendron spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "bay laurel",
+      "scientific_name": "Laurus nobilis",
+      "aliases": [
+        "bay tree",
+        "laurel"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Laurus nobilis.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Bay Laurel; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Laurus nobilis",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "begonia",
+      "scientific_name": "Begonia spp.",
+      "aliases": [],
+      "taxonomic_scope": "Curated plant lookup entry for Begonia spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Begonia; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Begonia spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "caladium",
+      "scientific_name": "Caladium hortulanum",
+      "aliases": [
+        "elephant ears"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Caladium hortulanum.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Caladium; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Caladium hortulanum",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "calla lily",
+      "scientific_name": "Zantedeschia aethiopica",
+      "aliases": [
+        "arum lily",
+        "trumpet lily"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Zantedeschia aethiopica.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Calla Lily; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Zantedeschia aethiopica",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "carnation",
+      "scientific_name": "Dianthus caryophyllus",
+      "aliases": [
+        "pinks",
+        "sweet william"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Dianthus caryophyllus.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Carnation; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Dianthus caryophyllus",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "castor bean",
+      "scientific_name": "Ricinus communis",
+      "aliases": [
+        "castor oil plant"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Ricinus communis.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Castor Bean Plant; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Ricinus communis",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "catnip",
+      "scientific_name": "Nepeta cataria",
+      "aliases": [
+        "catmint"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Nepeta cataria.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Catnip; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Nepeta cataria",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "clivia lily",
+      "scientific_name": "Clivia spp.",
+      "aliases": [
+        "kaffir lily"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Clivia spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Clivia Lily; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Clivia spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "corn plant",
+      "scientific_name": "Dracaena fragrans",
+      "aliases": [
+        "cornstalk plant",
+        "dragon tree"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Dracaena fragrans.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Corn Plant; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Dracaena fragrans",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "dracaena marginata",
+      "scientific_name": "Dracaena marginata",
+      "aliases": [
+        "madagascar dragon tree",
+        "red-margined dracaena"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Dracaena marginata.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Straight-Margined Dracaena; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Dracaena marginata",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "english ivy",
+      "scientific_name": "Hedera helix",
+      "aliases": [
+        "branching ivy",
+        "glacier ivy"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Hedera helix.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "English Ivy; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Hedera helix",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "eucalyptus",
+      "scientific_name": "Eucalyptus spp.",
+      "aliases": [],
+      "taxonomic_scope": "Curated plant lookup entry for Eucalyptus spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Eucalyptus; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Eucalyptus spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "foxglove",
+      "scientific_name": "Digitalis purpurea",
+      "aliases": [],
+      "taxonomic_scope": "Curated plant lookup entry for Digitalis purpurea.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Foxglove; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Digitalis purpurea",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "gardenia",
+      "scientific_name": "Gardenia jasminoides",
+      "aliases": [
+        "cape jasmine"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Gardenia jasminoides.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Gardenia; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Gardenia jasminoides",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "geranium",
+      "scientific_name": "Pelargonium spp.",
+      "aliases": [
+        "scented geranium"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Pelargonium spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Geranium; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Pelargonium spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "gladiolus",
+      "scientific_name": "Gladiolus spp.",
+      "aliases": [
+        "gladiola"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Gladiolus spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Gladiola; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Gladiolus spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "holly",
+      "scientific_name": "Ilex spp.",
+      "aliases": [
+        "american holly",
+        "english holly"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Ilex spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Holly; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Ilex spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "hyacinth",
+      "scientific_name": "Hyacinthus orientalis",
+      "aliases": [
+        "garden hyacinth"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Hyacinthus orientalis.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Hyacinth; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Hyacinthus orientalis",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "hydrangea",
+      "scientific_name": "Hydrangea arborescens",
+      "aliases": [
+        "hortensia"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Hydrangea arborescens.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Hydrangea; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Hydrangea arborescens",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "kalanchoe",
+      "scientific_name": "Kalanchoe spp.",
+      "aliases": [
+        "mother of millions",
+        "devils backbone"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Kalanchoe spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Kalanchoe; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Kalanchoe spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "lily",
+      "scientific_name": "Lilium spp.",
+      "aliases": [
+        "easter lily",
+        "tiger lily",
+        "stargazer lily",
+        "asiatic lily"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Lilium spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Easter Lily; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Lilium spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "nandina",
+      "scientific_name": "Nandina domestica",
+      "aliases": [
+        "heavenly bamboo",
+        "sacred bamboo"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Nandina domestica.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Nandina; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Nandina domestica",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "oxalis",
+      "scientific_name": "Oxalis spp.",
+      "aliases": [
+        "shamrock plant",
+        "sorrel"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Oxalis spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Good Luck Plant; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Oxalis spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "pencil cactus",
+      "scientific_name": "Euphorbia tirucalli",
+      "aliases": [
+        "firestick plant",
+        "sticks of fire"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Euphorbia tirucalli.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Pencil Cactus; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Euphorbia tirucalli",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "sago palm",
+      "scientific_name": "Cycas revoluta",
+      "aliases": [
+        "cycad",
+        "king sago"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Cycas revoluta.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Sago Palm; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Cycas revoluta",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "snake plant",
+      "scientific_name": "Sansevieria trifasciata",
+      "aliases": [
+        "mother-in-law tongue",
+        "mother-in-law’s tongue"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Sansevieria trifasciata.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Snake Plant; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Sansevieria trifasciata",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "tulip",
+      "scientific_name": "Tulipa spp.",
+      "aliases": [],
+      "taxonomic_scope": "Curated plant lookup entry for Tulipa spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Tulip; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Tulipa spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "wisteria",
+      "scientific_name": "Wisteria spp.",
+      "aliases": [],
+      "taxonomic_scope": "Curated plant lookup entry for Wisteria spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Wisteria; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Wisteria spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "yucca",
+      "scientific_name": "Yucca spp.",
+      "aliases": [],
+      "taxonomic_scope": "Curated plant lookup entry for Yucca spp..",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Yucca; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Yucca spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "asparagus fern",
+      "scientific_name": "Asparagus densiflorus",
+      "aliases": [
+        "sprengeri fern",
+        "emerald fern"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Asparagus densiflorus.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Asparagus Fern; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Asparagus densiflorus",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "bird of paradise flower",
+      "scientific_name": "Strelitzia reginae",
+      "aliases": [
+        "crane flower"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Strelitzia reginae.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Bird of Paradise Flower; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Strelitzia reginae",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "christmas rose",
+      "scientific_name": "Helleborus niger",
+      "aliases": [
+        "hellebore",
+        "lenten rose"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Helleborus niger.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Christmas Rose; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Helleborus niger",
+          "evidence_status": "toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "areca palm",
+      "scientific_name": "Dypsis lutescens",
+      "aliases": [
+        "butterfly palm",
+        "golden cane palm"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Dypsis lutescens.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Areca Palm; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Dypsis lutescens",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "aluminum plant",
+      "scientific_name": "Pilea cadierei",
+      "aliases": [
+        "watermelon plant"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Pilea cadierei.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Aluminum Plant; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Pilea cadierei",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "artillery plant",
+      "scientific_name": "Pilea microphylla",
+      "aliases": [],
+      "taxonomic_scope": "Curated plant lookup entry for Pilea microphylla.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Artillery Plant; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Pilea microphylla",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "polka dot plant",
+      "scientific_name": "Hypoestes phyllostachya",
+      "aliases": [
+        "freckle face",
+        "hypoestes"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Hypoestes phyllostachya.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Polka Dot Plant; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Hypoestes phyllostachya",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "ball fern",
+      "scientific_name": "Davallia spp.",
+      "aliases": [
+        "rabbits foot fern"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Davallia spp..",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Ball Fern; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Davallia spp.",
+          "evidence_status": "non_toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "baby rubber plant",
+      "scientific_name": "Peperomia obtusifolia",
+      "aliases": [
+        "american rubber plant",
+        "pepper face"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Peperomia obtusifolia.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Baby Rubber Plant; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Peperomia obtusifolia",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "basil",
+      "scientific_name": "Ocimum basilicum",
+      "aliases": [
+        "sweet basil"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Ocimum basilicum.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Basil; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Ocimum basilicum",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "burros tail",
+      "scientific_name": "Sedum morganianum",
+      "aliases": [
+        "donkeys tail",
+        "lambs tail"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Sedum morganianum.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Burro's Tail; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Sedum morganianum",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "calathea",
+      "scientific_name": "Calathea spp.",
+      "aliases": [
+        "prayer plant",
+        "rattlesnake plant"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Calathea spp..",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Calathea; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Calathea spp.",
+          "evidence_status": "non_toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "camellia",
+      "scientific_name": "Camellia japonica",
+      "aliases": [
+        "common camellia"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Camellia japonica.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Camellia; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Camellia japonica",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "cast iron plant",
+      "scientific_name": "Aspidistra elatior",
+      "aliases": [
+        "bar room plant"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Aspidistra elatior.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Cast Iron Plant; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Aspidistra elatior",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "christmas cactus",
+      "scientific_name": "Schlumbergera bridgesii",
+      "aliases": [
+        "holiday cactus"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Schlumbergera bridgesii.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Christmas Cactus; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Schlumbergera bridgesii",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "creeping charlie",
+      "scientific_name": "Pilea nummulariifolia",
+      "aliases": [
+        "swedish ivy"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Pilea nummulariifolia.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Creeping Charlie; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Pilea nummulariifolia",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "crepe myrtle",
+      "scientific_name": "Lagerstroemia indica",
+      "aliases": [
+        "crape myrtle"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Lagerstroemia indica.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Crepe Myrtle; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Lagerstroemia indica",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "friendship plant",
+      "scientific_name": "Pilea involucrata",
+      "aliases": [
+        "panamiga"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Pilea involucrata.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Friendship Plant; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Pilea involucrata",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "freesia",
+      "scientific_name": "Freesia spp.",
+      "aliases": [],
+      "taxonomic_scope": "Curated plant lookup entry for Freesia spp..",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_plant_explainer",
+          "source_match": "Freesia (Freesia spp.); included by ASPCA among non-toxic flowers/plants",
+          "evidence_taxon": "Freesia spp.",
+          "evidence_status": "non_toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "hens and chicks",
+      "scientific_name": "Echeveria elegans",
+      "aliases": [
+        "chickens and hens"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Echeveria elegans.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Hens and Chickens; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Echeveria elegans",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "hibiscus",
+      "scientific_name": "Hibiscus syriacus",
+      "aliases": [
+        "rose of sharon",
+        "rose of china"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Hibiscus syriacus.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Hibiscus; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Hibiscus syriacus",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "hoya",
+      "scientific_name": "Hoya carnosa",
+      "aliases": [
+        "wax plant",
+        "hindu rope plant"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Hoya carnosa.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Honey Plant; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Hoya carnosa",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "impatiens",
+      "scientific_name": "Impatiens spp.",
+      "aliases": [
+        "busy lizzie",
+        "patient lucy"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Impatiens spp..",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Impatience Plant; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Impatiens spp.",
+          "evidence_status": "non_toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "jasmine",
+      "scientific_name": "Jasminum spp.",
+      "aliases": [],
+      "taxonomic_scope": "Curated plant lookup entry for Jasminum spp..",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Jasmine; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Jasminum spp.",
+          "evidence_status": "non_toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "kentia palm",
+      "scientific_name": "Howea forsteriana",
+      "aliases": [
+        "paradise palm"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Howea forsteriana.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Kentia Palm; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Howea forsteriana",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "money tree",
+      "scientific_name": "Pachira aquatica",
+      "aliases": [
+        "guiana chestnut"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Pachira aquatica.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Money Tree; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Pachira aquatica",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "norfolk island pine",
+      "scientific_name": "Araucaria heterophylla",
+      "aliases": [
+        "norfolk pine",
+        "house pine"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Araucaria heterophylla.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Australian Pine; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Araucaria heterophylla",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "orchid",
+      "scientific_name": "Orchidaceae",
+      "aliases": [
+        "orchids"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Orchidaceae.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_plant_explainer",
+          "source_match": "Orchids (Orchidaceae); included by ASPCA among non-toxic flowers/plants",
+          "evidence_taxon": "Orchidaceae",
+          "evidence_status": "non_toxic",
+          "match_scope": "family"
+        }
+      ]
+    },
+    {
+      "class_name": "petunia",
+      "scientific_name": "Petunia spp.",
+      "aliases": [],
+      "taxonomic_scope": "Curated plant lookup entry for Petunia spp..",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_plant_explainer",
+          "source_match": "Petunia (Petunia spp.); included by ASPCA among non-toxic flowers/plants",
+          "evidence_taxon": "Petunia spp.",
+          "evidence_status": "non_toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "pony tail palm",
+      "scientific_name": "Beaucarnea recurvata",
+      "aliases": [
+        "ponytail plant",
+        "bottle palm"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Beaucarnea recurvata.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Pony Tail; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Beaucarnea recurvata",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "rose",
+      "scientific_name": "Rosa spp.",
+      "aliases": [],
+      "taxonomic_scope": "Curated plant lookup entry for Rosa spp..",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Rose; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Rosa spp.",
+          "evidence_status": "non_toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "rosemary",
+      "scientific_name": "Salvia rosmarinus",
+      "aliases": [
+        "rosmarinus officinalis"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Salvia rosmarinus.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Rosemary; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Salvia rosmarinus",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "sage",
+      "scientific_name": "Salvia officinalis",
+      "aliases": [
+        "garden sage"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Salvia officinalis.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Sage; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Salvia officinalis",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "snapdragon",
+      "scientific_name": "Antirrhinum majus",
+      "aliases": [
+        "garden snapdragon"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Antirrhinum majus.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Common Snapdragon; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Antirrhinum majus",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "sunflower",
+      "scientific_name": "Helianthus annuus",
+      "aliases": [],
+      "taxonomic_scope": "Curated plant lookup entry for Helianthus annuus.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_plant_explainer",
+          "source_match": "Sunflowers (Helianthus spp.); included by ASPCA among non-toxic flowers/plants",
+          "evidence_taxon": "Helianthus spp.",
+          "evidence_status": "non_toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "zinnia",
+      "scientific_name": "Zinnia elegans",
+      "aliases": [],
+      "taxonomic_scope": "Curated plant lookup entry for Zinnia elegans.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_plant_explainer",
+          "source_match": "Zinnia (Zinnia elegans); included by ASPCA among non-toxic flowers/plants",
+          "evidence_taxon": "Zinnia elegans",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "cape primrose",
+      "scientific_name": "Streptocarpus spp.",
+      "aliases": [
+        "streptocarpus"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Streptocarpus spp..",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Cape Primrose; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Streptocarpus spp.",
+          "evidence_status": "non_toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "goldfish plant",
+      "scientific_name": "Nematanthus spp.",
+      "aliases": [
+        "candy corn plant"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Nematanthus spp..",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Candy Corn Plant; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Nematanthus spp.",
+          "evidence_status": "non_toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "nerve plant",
+      "scientific_name": "Fittonia albivenis",
+      "aliases": [
+        "fittonia"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Fittonia albivenis.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Nerve Plant; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Fittonia albivenis",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "purple waffle plant",
+      "scientific_name": "Hemigraphis alternata",
+      "aliases": [
+        "waffle plant"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Hemigraphis alternata.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Purple Waffle Plant; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Hemigraphis alternata",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    },
+    {
+      "class_name": "rubber plant",
+      "scientific_name": "Ficus elastica",
+      "aliases": [
+        "rubber tree"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Ficus elastica.",
+      "toxicity_status": "unknown",
+      "potential_hazard": null,
+      "evidence": [],
+      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+    },
+    {
+      "class_name": "zz plant",
+      "scientific_name": "Zamioculcas zamiifolia",
+      "aliases": [
+        "zanzibar gem"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Zamioculcas zamiifolia.",
+      "toxicity_status": "unknown",
+      "potential_hazard": null,
+      "evidence": [],
+      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+    },
+    {
+      "class_name": "pilea peperomioides",
+      "scientific_name": "Pilea peperomioides",
+      "aliases": [
+        "chinese money plant",
+        "pancake plant"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Pilea peperomioides.",
+      "toxicity_status": "unknown",
+      "potential_hazard": null,
+      "evidence": [],
+      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+    },
+    {
+      "class_name": "monstera adansonii",
+      "scientific_name": "Monstera adansonii",
+      "aliases": [
+        "swiss cheese vine"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Monstera adansonii.",
+      "toxicity_status": "unknown",
+      "potential_hazard": null,
+      "evidence": [],
+      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+    },
+    {
+      "class_name": "croton",
+      "scientific_name": "Codiaeum variegatum",
+      "aliases": [
+        "garden croton"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Codiaeum variegatum.",
+      "toxicity_status": "unknown",
+      "potential_hazard": null,
+      "evidence": [],
+      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+    },
+    {
+      "class_name": "lavender",
+      "scientific_name": "Lavandula spp.",
+      "aliases": [
+        "english lavender"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Lavandula spp..",
+      "toxicity_status": "unknown",
+      "potential_hazard": null,
+      "evidence": [],
+      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+    },
+    {
+      "class_name": "ficus lyrata",
+      "scientific_name": "Ficus lyrata",
+      "aliases": [
+        "fiddle-leaf fig"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Ficus lyrata.",
+      "toxicity_status": "unknown",
+      "potential_hazard": null,
+      "evidence": [],
+      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+    },
+    {
+      "class_name": "marigold",
+      "scientific_name": "Calendula officinalis",
+      "aliases": [
+        "pot marigold",
+        "calendula"
+      ],
+      "taxonomic_scope": "Curated plant lookup entry for Calendula officinalis.",
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_cat_list",
+          "source_match": "Pot Marigold; listed by ASPCA as non-toxic to cats",
+          "evidence_taxon": "Calendula officinalis",
+          "evidence_status": "non_toxic",
+          "match_scope": "species"
+        }
+      ]
+    }
+  ],
+  "curation": {
+    "selection_basis": "Curated set of 100 commonly encountered house, garden, and bouquet plant labels for cat-related reference lookup; selected for familiarity and source coverage, not a statistically ranked or globally definitive top-100 list.",
+    "primary_toxicity_reference": "aspca_cat_list",
+    "unknown_policy": "Entries without a class-specific source match remain unknown. Absence of a source record is not evidence of safety."
+  }
+}
