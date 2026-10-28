@@ -21,17 +21,16 @@ from petsafe.api.services import (
     assess_with_spark,
     available_models,
     load_uploaded_image,
-    predict_trained,
+    predict_trained_flow,
     segment_and_assess,
 )
-from petsafe.api.toxicity import lookup_toxicity
 
 app = FastAPI(
     title="PetSafe Plants Inference API",
     version="0.1.0",
     description=(
-        "Compare notebook 03 plant classifiers with Muse Spark and optional SAM 3.1 "
-        "segmentation, then attach a local source-backed toxicity reference lookup. "
+        "Compare local classifier plus Grounding DINO crops with the separate Muse Spark "
+        "plus optional SAM 3.1 flow, then attach source-backed toxicity lookups. "
         "Results are experimental and are not veterinary advice."
     ),
 )
@@ -91,10 +90,7 @@ async def trained_flow(
     name = _model_name(model_name)
     image, _normalized = await _read_image(image_file)
     try:
-        prediction = await predict_trained(name, image)
-        return prediction.model_copy(
-            update={"toxicity": lookup_toxicity(prediction.predicted_class)}
-        )
+        return await predict_trained_flow(name, image)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except (RuntimeError, OSError, ValueError) as exc:
@@ -115,12 +111,11 @@ async def muse_spark_flow(image_file: UploadFile = File(...)) -> PlantAssessment
 async def compare_flows(
     image_file: UploadFile = File(...),
     model_name: str = Form("efficientnet_b2"),
-    confidence_threshold: float = Form(0.55, ge=0.0, le=1.0),
     force_sam: bool = Form(False),
     skip_sam: bool = Form(False),
     sam_prompt: str = Form("flower"),
 ) -> CompareResponse:
-    """Run both flows and conditionally segment/re-assess the uploaded image."""
+    """Run local detector/classifier and separate Muse Spark/SAM flows."""
     if force_sam and skip_sam:
         raise HTTPException(status_code=422, detail="force_sam and skip_sam cannot both be true.")
     if sam_prompt not in {"flower", "plant"}:
@@ -129,29 +124,22 @@ async def compare_flows(
     image, normalized = await _read_image(image_file)
     try:
         trained, spark = await asyncio.gather(
-            predict_trained(name, image),
+            predict_trained_flow(name, image),
             assess_with_spark(normalized),
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Initial comparison failed: {exc}") from exc
-    trained = trained.model_copy(
-        update={"toxicity": lookup_toxicity(trained.predicted_class)}
-    )
 
     reasons: list[str] = []
-    if spark.flower_count_estimate > 1:
-        reasons.append("Muse Spark estimated multiple visible flowers.")
-    if spark.identification_confidence == "low":
-        reasons.append("Muse Spark reported low plant-identification confidence.")
-    if spark.flower_count_confidence == "low":
-        reasons.append("Muse Spark reported low flower-count confidence.")
-    if trained.confidence < confidence_threshold:
-        reasons.append(
-            f"The trained model probability ({trained.confidence:.3f}) is below "
-            f"the configured threshold ({confidence_threshold:.3f})."
-        )
-    if spark.suggest_segmentation and not reasons:
-        reasons.append("Muse Spark recommended segmentation based on the image structure.")
+    if spark.suggest_segmentation:
+        reasons.append("Muse Spark recommended a closer look at plant regions.")
+    if spark.distinct_plant_count > 1:
+        reasons.append("Multiple distinct plant types were reported.")
+    if spark.bouquet_type in {"mixed_species", "uncertain"}:
+        reasons.append("The bouquet may contain different plant types.")
+    if any(group.needs_inspection and group.identification_confidence == "low"
+           for group in spark.plant_groups):
+        reasons.append("A low-confidence plant group needs inspection.")
 
     should_segment = force_sam or (bool(reasons) and not skip_sam)
     if force_sam and not reasons:
@@ -170,7 +158,7 @@ async def compare_flows(
         )
     else:
         try:
-            segments = await segment_and_assess(
+            segments, counts = await segment_and_assess(
                 image, normalized, trained_model_classes(name), prompt=sam_prompt
             )
             segmentation = SegmentationResult(
@@ -179,7 +167,17 @@ async def compare_flows(
                 reason=reasons,
                 prompt=sam_prompt,
                 segments=segments,
+                **counts,
             )
+            if not segments and any(
+                group.needs_inspection or group.identification_confidence == "low"
+                for group in spark.plant_groups
+            ) and not spark.another_photo_needed:
+                spark = spark.model_copy(update={
+                    "another_photo_needed": True,
+                    "photo_instructions": "Take a closer, sharper photo showing the uncertain plant and its leaves or flowers.",
+                    "photo_reason": "No useful isolated region was available for another visual assessment.",
+                })
         except Exception as exc:
             # Keep the two initial results usable if SAM or a crop reassessment fails.
             segmentation = SegmentationResult(

@@ -3,117 +3,88 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f5f5ee">
-    <title>PetSafe Plants · Compare flows</title>
-    <link rel="stylesheet" href="/styles.css">
+    <meta name="theme-color" content="#f4f7f1">
+    <meta name="description" content="Compare plant identification models and see source-backed pet toxicity references.">
+    <title>PetSafe Plants · Plant check</title>
+    <link rel="stylesheet" href="/styles.css?v=scan-sweep-4">
   </head>
   <body>
     <header class="topbar">
       <a class="brand" href="/" aria-label="PetSafe Plants home">
-        <span class="brand-mark" aria-hidden="true">✳</span>
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M24.8 6.5C15.2 6.6 8 10.7 8 18.2c0 4.2 3 7 6.6 7 7 0 10.3-9.4 10.2-18.7Z" fill="currentColor"/><path d="M7 26c3.5-6.5 8.2-10 14.2-13" stroke="#f4f7f1" stroke-width="1.5" stroke-linecap="round"/></svg></span>
         <span>PetSafe <span class="brand-light">Plants</span></span>
       </a>
       <div class="topbar-right">
-        <span class="experiment-tag">INFERENCE PLAYGROUND</span>
+        <span class="experiment-tag">PLANT CHECK · RESEARCH PREVIEW</span>
         <button id="api-status" class="status-pill status-loading" type="button" title="Click to change the API base URL"><span class="status-dot"></span>Checking API</button>
       </div>
     </header>
 
     <main class="page-shell">
       <section class="intro">
-        <p class="eyebrow">PLANT IDENTITY · FLOW COMPARISON</p>
-        <h1>One photo.<br><span>Two ways to look.</span></h1>
-        <p class="intro-copy">Compare your trained classifier with Muse Spark. When the image looks ambiguous or contains multiple flowers, the second flow can use SAM to isolate blooms and ask Spark again.</p>
+        <div class="intro-copy-block">
+          <p class="eyebrow"><span class="eyebrow-line"></span> A clearer look at the plants around you</p>
+          <h1>Could this plant<br>be <em>pet-safe?</em></h1>
+          <p class="intro-copy">Compare two independent paths: your trained model checks the full photo and Grounding DINO flower crops; Muse Spark checks the scene and can use SAM to inspect selected regions.</p>
+        </div>
+        <div class="intro-stamp" aria-hidden="true"><span>IDENTIFY</span><b>✳</b><span>THEN VERIFY</span></div>
       </section>
 
-      <section class="workspace" aria-label="Image and inference controls">
-        <div id="dropzone" class="dropzone">
-          <input id="image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-          <div class="upload-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <section class="workspace" aria-label="Plant image and scan settings">
+        <div class="workspace-topline"><div><span class="step-number">01</span><span class="section-label">ADD A PHOTO</span></div><span class="format-note">JPG · PNG · WEBP <i>·</i> UP TO 12 MB</span></div>
+        <div class="workspace-grid">
+          <div id="dropzone" class="dropzone">
+            <input id="image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+            <div class="upload-empty" id="upload-empty">
+              <div class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <strong id="upload-title">Drop your plant photo here</strong>
+              <span id="upload-subtitle">or <button id="choose-image" class="text-button" type="button">browse files</button></span>
+              <span class="upload-hint">A clear photo helps both flows make a better guess.</span>
+            </div>
+            <div id="image-stage" class="image-stage" hidden>
+              <img id="image-preview" class="image-preview" alt="Selected plant photograph" hidden>
+              <canvas id="scan-overlay" class="scan-overlay" aria-hidden="true"></canvas>
+              <div id="flower-boxes" class="flower-boxes" aria-label="Detected flower regions"></div>
+              <div class="scan-beam" aria-hidden="true"></div>
+              <div class="scan-line" aria-hidden="true"></div>
+              <div class="scan-corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+              <div class="scan-readout" aria-live="polite"><span class="readout-dot"></span><span id="scan-message">PHOTO READY</span></div>
+              <button id="remove-image" class="icon-button remove-button" type="button" aria-label="Remove image">×</button>
+              <span class="scan-disclaimer">Preview animation · not a model-generated mask</span>
+            </div>
           </div>
-          <div class="upload-text">
-            <strong id="upload-title">Drop a plant photo here</strong>
-            <span id="upload-subtitle">or <button id="choose-image" class="text-button" type="button">choose an image</button> · JPG, PNG, WebP</span>
-          </div>
-          <button id="remove-image" class="icon-button remove-button" type="button" aria-label="Remove image" hidden>×</button>
-          <img id="image-preview" class="image-preview" alt="Selected plant photograph" hidden>
-        </div>
 
-        <div class="controls">
-          <label class="control-field">
-            <span>Trained model</span>
-            <select id="model-select" aria-label="Trained model">
-              <option value="efficientnet_b2">EfficientNet-B2</option>
-              <option value="dinov3">DINOv3</option>
-              <option value="siglip2">SigLIP2</option>
-            </select>
-          </label>
-          <label class="control-field confidence-field">
-            <span>Low-confidence threshold <b id="threshold-value">0.55</b></span>
-            <input id="confidence-threshold" type="range" min="0.10" max="0.95" step="0.05" value="0.55">
-          </label>
-          <label class="control-field">
-            <span>SAM mode</span>
-            <select id="sam-mode" aria-label="SAM segmentation mode">
-              <option value="automatic">Automatic</option>
-              <option value="force">Always segment</option>
-              <option value="skip">Skip segmentation</option>
-            </select>
-          </label>
-          <label class="control-field">
-            <span>Segment prompt</span>
-            <select id="sam-prompt" aria-label="SAM prompt">
-              <option value="flower">Flowers</option>
-              <option value="plant">Whole plants</option>
-            </select>
-          </label>
-          <button id="compare-button" class="primary-button" type="button" disabled>
-            <span>Compare flows</span><span aria-hidden="true">↗</span>
-          </button>
+          <div class="settings-panel">
+            <div class="settings-heading"><span class="step-number">02</span><span class="section-label">CHOOSE YOUR CHECK</span></div>
+            <label class="control-field model-field"><span>Classifier model</span><select id="model-select" aria-label="Trained model"><option value="efficientnet_b2">EfficientNet-B2</option><option value="dinov3">DINOv3</option><option value="siglip2">SigLIP2</option></select></label>
+            <div class="settings-row">
+              <label class="control-field"><span>Meta flow · SAM mode</span><select id="sam-mode" aria-label="Meta flow SAM segmentation mode"><option value="automatic">Automatic</option><option value="force">Always segment</option><option value="skip">Skip segmentation</option></select></label>
+              <label class="control-field"><span>Meta flow · SAM target</span><select id="sam-prompt" aria-label="Meta flow SAM prompt"><option value="flower">Flowers</option><option value="plant">Whole plants</option></select></label>
+            </div>
+            <button id="compare-button" class="primary-button" type="button" disabled><span class="button-icon" aria-hidden="true">✳</span><span class="button-label">Check this plant</span><span class="button-arrow" aria-hidden="true">↗</span></button>
+            <p class="privacy-note"><span aria-hidden="true">◇</span> Your photo is sent to the configured inference API. This page does not save it.</p>
+          </div>
         </div>
-        <p class="privacy-note"><span aria-hidden="true">◇</span> The image is sent to the configured API and Meta Model API. It is not saved by this client.</p>
       </section>
 
       <div id="error-banner" class="error-banner" role="alert" hidden></div>
-      <div id="run-status" class="run-status" aria-live="polite" hidden><span class="spinner"></span><span>Running both flows. Segmentation may add several API calls…</span></div>
+      <section id="scan-progress" class="scan-progress" aria-live="polite" hidden>
+        <div class="progress-orbit" aria-hidden="true"><span></span><i></i></div>
+        <div class="progress-copy"><p class="progress-kicker">TWO FLOWS, ONE PHOTO</p><strong id="progress-title">Looking closely at your photo…</strong><span id="progress-detail">Preparing both image checks.</span></div>
+        <div class="progress-track" aria-hidden="true"><span></span></div>
+      </section>
+      <div id="run-status" class="run-status" aria-live="polite" hidden></div>
 
       <section id="results" class="results" hidden aria-live="polite">
-        <div class="results-heading">
-          <div><p class="eyebrow">THE SAME IMAGE · TWO FLOWS</p><h2>What the models see</h2></div>
-          <button id="clear-results" class="text-button clear-button" type="button">Clear results</button>
-        </div>
+        <div class="results-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> THE SAME IMAGE · TWO FLOWS</p><h2>Here’s what they noticed</h2></div><button id="clear-results" class="text-button clear-button" type="button">Clear results</button></div>
         <div class="comparison-grid">
-          <article class="result-card trained-card">
-            <div class="card-heading">
-              <div class="card-icon trained-icon" aria-hidden="true">01</div>
-              <div><p class="card-kicker">FROZEN ENCODER + CLASSIFIER</p><h3>Trained model</h3></div>
-            </div>
-            <div id="trained-result" class="result-content"><p class="empty-state">Run a comparison to see the classifier result.</p></div>
-          </article>
-          <article class="result-card spark-card">
-            <div class="card-heading">
-              <div class="card-icon spark-icon" aria-hidden="true">02</div>
-              <div><p class="card-kicker">MULTIMODAL · OPTIONAL SEGMENTATION</p><h3>Muse Spark flow</h3></div>
-            </div>
-            <div id="spark-result" class="result-content"><p class="empty-state">Run a comparison to see Spark’s image assessment.</p></div>
-          </article>
+          <article class="result-card trained-card"><div class="card-heading"><div class="card-icon trained-icon" aria-hidden="true">01</div><div><p class="card-kicker">LOCAL MODELS · NO SAM</p><h3>Trained model flow</h3></div></div><p class="flow-path">Full photo classifier <span>→</span> Grounding DINO boxes <span>→</span> crop classifier</p><div id="trained-result" class="result-content"><p class="empty-state">Run a check to see the classifier result.</p></div></article>
+          <article class="result-card spark-card"><div class="card-heading"><div class="card-icon spark-icon" aria-hidden="true">02</div><div><p class="card-kicker">META MODEL API</p><h3>Muse Spark flow</h3></div></div><p class="flow-path">Muse Spark <span>→</span> optional SAM 3.1 <span>→</span> Muse Spark on selected regions</p><div id="spark-result" class="result-content"><p class="empty-state">Run a check to see Spark’s image assessment.</p></div><section id="segmentation-panel" class="segmentation-panel" hidden><div class="segmentation-heading"><div><p class="card-kicker">SAM 3.1 · SPARK RE-ASSESSMENT</p><h3>Selected regions</h3></div><span id="segmentation-status" class="status-pill"></span></div><p id="segmentation-reason" class="segmentation-reason"></p><div id="segments-grid" class="segments-grid"></div></section></article>
         </div>
-        <section id="segmentation-panel" class="segmentation-panel" hidden>
-          <div class="segmentation-heading">
-            <div><p class="card-kicker">SAM 3.1 · SPARK RE-ASSESSMENT</p><h3>Segmented views</h3></div>
-            <span id="segmentation-status" class="status-pill"></span>
-          </div>
-          <p id="segmentation-reason" class="segmentation-reason"></p>
-          <div id="segments-grid" class="segments-grid"></div>
-        </section>
       </section>
 
-      <footer class="disclaimer">
-        <span class="disclaimer-icon" aria-hidden="true">!</span>
-        <p><strong>Experimental results, not safety advice.</strong> Plant identifications and flower counts can be wrong. Toxicity labels are source-backed reference lookups for a possible match, not a diagnosis or guarantee of safety. Contact a veterinarian if ingestion is suspected.</p>
-      </footer>
+      <footer class="disclaimer"><span class="disclaimer-icon" aria-hidden="true">!</span><p><strong>Experimental results, not safety advice.</strong> Plant identities and region boundaries can be wrong. Toxicity labels are source-backed references for a possible match, not a diagnosis or guarantee of safety. Contact a veterinarian if ingestion is suspected.</p></footer>
     </main>
-    <script src="/app.js" defer></script>
+    <script src="/app.js?v=prompt-cache-1" defer></script>
   </body>
 </html>

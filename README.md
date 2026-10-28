@@ -16,7 +16,7 @@ The project explores whether combining specialized computer vision models with M
 
 **Current stage:** Dataset preparation, model experimentation, and evaluation.
 
-PetSafe Plants does not provide veterinary advice or a validated toxicity assessment. The app's 100-entry cat-toxicity reference is a curated source lookup; it does not confirm the visual identification or guarantee safety.
+PetSafe Plants does not provide veterinary advice or a validated toxicity assessment. The app's 101-entry cat-toxicity reference is a curated source lookup; it does not confirm the visual identification or guarantee safety.
 
 ## Research Objectives
 
@@ -37,6 +37,7 @@ The initial experiments use frozen pretrained image encoders with trained classi
 | EfficientNet-B2 | CNN classification baseline |
 | Meta DINOv3 | Visual feature extraction and classification |
 | SigLIP2 | Vision-language representation baseline |
+| Grounding DINO tiny | Zero-shot flower boxes for per-crop classifier inference |
 | Meta Muse Spark | Multimodal identification comparison |
 | Meta SAM 3.1 | Planned segmentation and multi-plant analysis |
 
@@ -120,9 +121,11 @@ API calls may incur charges.
 
 ## Inference API
 
-The API serves the frozen-encoder classifier heads exported by notebook 03 and compares them with the Muse Spark → optional SAM 3.1 → Muse Spark flow. It does not train models. Set `PETSAFE_RUNS_DIR` to the experiment directory containing `efficientnet_b2/`, `dinov3/`, and `siglip2/`; each selected model needs `best_head.pt`, `config.json`, and `class_mapping.json` from notebook 03. Model weights and the dataset remain outside this repository.
+The API compares two independent paths. **Left:** full-image classifier → [Grounding DINO tiny](https://huggingface.co/IDEA-Research/grounding-dino-tiny) zero-shot flower boxes → the same trained classifier on each box crop. Grounding DINO detects boxes; it does not produce segmentation masks. **Right:** Muse Spark scene assessment → optional SAM 3.1 masks → Muse Spark on selected regions. SAM is used only on the right. Both paths attach local source-backed toxicity lookups to their candidate identities. Grounding DINO is Apache-2.0 licensed, loads on the first trained-flow request, and downloads its weights to the configured Hugging Face cache. Detection boxes and crop predictions are hypotheses; detector scores and classifier probabilities are not calibrated safety confidence. Up to six flower boxes are shown by default. Set `PETSAFE_MAX_FLOWER_DETECTIONS` and `PETSAFE_FLOWER_DETECTION_THRESHOLD` to adjust this. It does not train models. Set `PETSAFE_RUNS_DIR` to the experiment directory containing `efficientnet_b2/`, `dinov3/`, and `siglip2/`; each selected model needs `best_head.pt`, `config.json`, and `class_mapping.json` from notebook 03. Saved classifier weights and the dataset remain outside this repository.
 
-After each visual identification, the API performs a deterministic local lookup in `data/toxicity/plant_toxicity.json` and returns the status, taxonomic scope, and source links alongside the prediction. The 100 plant labels are a curated selection of commonly encountered house, garden, and bouquet plants, not a statistically ranked global list. Spark does not generate toxicity claims. The table is a limited reference, not a diagnosis or a guarantee of safety; unknown or unmatched identities remain unknown. Set `PETSAFE_TOXICITY_DB` to use a different copy. Docker includes this JSON file in the API image.
+After each visual identification, the API performs a deterministic local lookup in `data/toxicity/plant_toxicity.json` and returns the status, taxonomic scope, and source links alongside the prediction. The 101 plant labels are a curated selection of commonly encountered house, garden, and bouquet plants, not a statistically ranked global list. Spark does not generate toxicity claims. The table is a limited reference, not a diagnosis or a guarantee of safety; unknown or unmatched identities remain unknown. `Hippeastrum` and `Amaryllis` have separate cited entries because the common name “amaryllis” refers to both; that common name alone gives an ambiguous lookup. Set `PETSAFE_TOXICITY_DB` to use a different copy. Docker includes this JSON file in the API image.
+
+The API keeps up to 256 inference result payloads in a process-local LRU cache, keyed by SHA-256 image hashes and model/request type. It caches trained-model predictions and Muse Spark assessments, including segmented-crop Spark responses. It does not store uploaded image bytes and the cache clears when the API process restarts. Set `PETSAFE_RESULT_CACHE_SIZE=0` to disable caching or change the limit; SAM segmentation itself is rerun when requested. Meta's separate prompt cache is automatic; the API sends a stable key for its shared developer prompt. A Meta cached-token count of zero means no provider cache reuse was reported for that request, while “not reported” means the provider omitted the cached-token detail.
 
 Install the optional server dependencies and configure credentials and paths in the server environment:
 
@@ -130,8 +133,8 @@ Install the optional server dependencies and configure credentials and paths in 
 uv sync --extra api
 export PETSAFE_RUNS_DIR="/path/to/plant_export_v20261026_2355546_holdout10_seed42"
 export MODEL_API_KEY="your-meta-model-api-key"
-# Optional; defaults to 1200 completion tokens for structured Spark responses.
-export PETSAFE_SPARK_MAX_COMPLETION_TOKENS="1200"
+# Optional; defaults to 3000 completion tokens for multi-plant structured responses.
+export PETSAFE_SPARK_MAX_COMPLETION_TOKENS="3000"
 # Optional, required when the DINOv3 model artifacts are selected:
 export HF_TOKEN="your-hugging-face-token"
 uv run uvicorn petsafe.api.app:app --app-dir src --host 127.0.0.1 --port 8000 --reload
@@ -147,7 +150,7 @@ Open `http://127.0.0.1:8000/` for the web client. It is a static HTML/CSS/JavaSc
 |---|---|
 | `GET /healthz` | API status and whether trained artifacts are discoverable |
 | `GET /api/models` | Supported model names and those with artifacts installed |
-| `POST /api/flows/trained` | Left-side trained model prediction and local toxicity-reference lookup; multipart fields `image_file` and optional `model_name` |
+| `POST /api/flows/trained` | Full-image and per-flower trained model predictions, Grounding DINO boxes, and local toxicity-reference lookups; multipart fields `image_file` and optional `model_name` |
 | `POST /api/flows/muse-spark` | Muse Spark JSON assessment and local toxicity-reference lookup on the uploaded image |
 | `POST /api/flows/compare` | Run both sides together, conditionally call SAM, reassess each segment with Muse Spark, and look up each returned identity |
 
@@ -156,11 +159,10 @@ Open `http://127.0.0.1:8000/docs` for the interactive API schema. Example compar
 ```bash
 curl -X POST http://127.0.0.1:8000/api/flows/compare \
   -F "image_file=@plant.jpg" \
-  -F "model_name=efficientnet_b2" \
-  -F "confidence_threshold=0.55"
+  -F "model_name=efficientnet_b2"
 ```
 
-The comparison endpoint requests SAM when Muse Spark estimates multiple flowers, reports low identification or flower-count confidence, recommends segmentation, or the trained model probability falls below `confidence_threshold`. Use `force_sam=true` or `skip_sam=true` to override that choice, and set `sam_prompt=plant` to segment whole plants instead of flowers. The response includes the trained model's top five classes, Spark's structured assessment, trigger reasons, and any SAM crops with Spark re-assessments. A toxicity lookup accompanies each returned identity and includes the reference links; it describes the database entry for a possible model match, not a confirmed plant identification. Classifier probabilities are not calibrated confidence scores. Spark's flower count is an estimate and is not ground truth.
+The comparison endpoint requests SAM when Muse Spark suggests segmentation, reports multiple distinct plant types, marks a bouquet mixed or uncertain, or marks a low-confidence group as needing inspection. Multiple flowers of one plant type alone do not trigger SAM. Use `force_sam=true` or `skip_sam=true` to override that choice, and set `sam_prompt=plant` to segment whole plants instead of flowers. After SAM, the API drops tiny or unreadable masks, removes near-duplicates using mask overlap, and selects up to six diverse regions before re-assessing them with Spark. The response reports mask counts before and after filtering. If no useful region remains, the full-scene assessment is retained and an uncertain scene can request another photo. Spark returns plant groups, bouquet status, additional-photo guidance, and Meta prompt-cache token usage (`cached_input_tokens` and `cache_hit_ratio`). A toxicity lookup accompanies each plant group and includes reference links. Classifier probabilities are not calibrated confidence scores. The local result cache is separate from Meta's prompt cache; on a local cache hit, displayed token usage describes the original Meta request.
 
 The API accepts images up to 12 MB, normalizes the longest side to 2,048 pixels, and sends the normalized image to the selected Meta services. Keep the server private while it can make paid Model API calls; this initial API has no user authentication or rate limiting.
 

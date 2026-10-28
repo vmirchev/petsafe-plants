@@ -22,6 +22,12 @@
       "url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/",
       "accessed_date": "2026-10-27"
     },
+    "aspca_hippeastrum": {
+      "publisher": "ASPCA Animal Poison Control",
+      "title": "Toxic and Non-toxic Plants: Lily of the Palace",
+      "url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/lily-palace",
+      "accessed_date": "2026-10-28"
+    },
     "aspca_succulent_article": {
       "publisher": "ASPCA Animal Poison Control",
       "title": "Are Succulents Safe to Have Around Pets?",
@@ -462,6 +468,29 @@
           "source_id": "aspca_cat_list",
           "source_match": "Amaryllis; listed by ASPCA as toxic to cats",
           "evidence_taxon": "Amaryllis spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus"
+        }
+      ]
+    },
+    {
+      "class_name": "hippeastrum",
+      "scientific_name": "Hippeastrum spp.",
+      "aliases": [
+        "amaryllis",
+        "barbados lily",
+        "fire lily",
+        "lily of the palace",
+        "ridderstjerne"
+      ],
+      "taxonomic_scope": "Hippeastrum genus; commonly sold as amaryllis, a name also used for the distinct Amaryllis genus.",
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_hippeastrum",
+          "source_match": "Lily of the Palace (Amaryllis); Hippeastrum spp.; listed by ASPCA as toxic to cats",
+          "evidence_taxon": "Hippeastrum spp.",
           "evidence_status": "toxic",
           "match_scope": "genus"
         }

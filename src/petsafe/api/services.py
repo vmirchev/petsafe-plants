@@ -5,6 +5,7 @@ import base64
 import io
 import json
 import os
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from threading import Lock
@@ -16,10 +17,14 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from torch import nn
 from torchvision.models import EfficientNet_B2_Weights, efficientnet_b2
 
+from petsafe.api.result_cache import cache_result, get_cached_result, image_digest
+from petsafe.api.prompts import PLANT_ASSESSMENT_PROMPT
 from petsafe.api.schemas import (
     ClassScore,
+    FlowerDetection,
     PlantAssessment,
     SegmentAssessment,
+    SparkUsage,
     TrainedPrediction,
 )
 from petsafe.api.toxicity import load_toxicity_database, lookup_toxicity
@@ -30,16 +35,37 @@ MAX_UPLOAD_BYTES = int(os.getenv("PETSAFE_MAX_UPLOAD_BYTES", str(12 * 1024 * 102
 MAX_IMAGE_SIDE = int(os.getenv("PETSAFE_MAX_IMAGE_SIDE", "2048"))
 MAX_SEGMENTS = int(os.getenv("PETSAFE_MAX_SEGMENTS", "6"))
 MIN_MASK_PIXELS = int(os.getenv("PETSAFE_MIN_MASK_PIXELS", "300"))
+MIN_MASK_AREA_RATIO = 0.001
+MIN_CROP_SIDE = 32
+MAX_FLOWER_DETECTIONS = int(os.getenv("PETSAFE_MAX_FLOWER_DETECTIONS", "6"))
+FLOWER_DETECTION_THRESHOLD = float(os.getenv("PETSAFE_FLOWER_DETECTION_THRESHOLD", "0.05"))
 DEFAULT_RUNS_DIR = Path("runs/plant_export_v20261026_2355546_holdout10_seed42")
 RUNS_DIR = Path(os.getenv("PETSAFE_RUNS_DIR", str(DEFAULT_RUNS_DIR))).expanduser()
 MODEL_API_BASE = "https://api.meta.ai/v1"
 SPARK_MODEL = os.getenv("PETSAFE_SPARK_MODEL", "muse-spark-1.3")
 SPARK_MAX_COMPLETION_TOKENS = int(
-    os.getenv("PETSAFE_SPARK_MAX_COMPLETION_TOKENS", "1200")
+    os.getenv("PETSAFE_SPARK_MAX_COMPLETION_TOKENS", "3000")
 )
 SAM_MODEL = "sam-3.1"
 _MODEL_LOCK = Lock()
+_DETECTOR_LOCK = Lock()
 
+_CONFIDENCE = {"type": "string", "enum": ["high", "medium", "low"]}
+_PLANT_GROUP_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "id": {"type": "integer"},
+        "plant_identification": {"type": "string"},
+        "scientific_name": {"type": "string"},
+        "toxicity_lookup_key": {"type": "string"},
+        "identification_confidence": _CONFIDENCE,
+        "visual_evidence": {"type": "array", "items": {"type": "string"}},
+        "needs_inspection": {"type": "boolean"},
+    },
+    "required": ["id", "plant_identification", "scientific_name", "toxicity_lookup_key",
+                 "identification_confidence", "visual_evidence", "needs_inspection"],
+}
 ASSESSMENT_SCHEMA: dict[str, Any] = {
     "type": "json_schema",
     "json_schema": {
@@ -49,47 +75,25 @@ ASSESSMENT_SCHEMA: dict[str, Any] = {
             "type": "object",
             "additionalProperties": False,
             "properties": {
-                "plant_identification": {"type": "string"},
-                "identification_confidence": {
-                    "type": "string",
-                    "enum": ["high", "medium", "low"],
-                },
-                "flower_count_estimate": {"type": "integer", "minimum": 0},
-                "flower_count_confidence": {
-                    "type": "string",
-                    "enum": ["high", "medium", "low"],
-                },
-                "flower_count_notes": {"type": "string"},
+                "is_bouquet": {"type": "boolean"},
+                "bouquet_type": {"type": "string", "enum": ["single_species", "mixed_species", "uncertain", "not_bouquet"]},
+                "distinct_plant_count": {"type": "integer"},
+                "plant_groups": {"type": "array", "items": _PLANT_GROUP_SCHEMA},
                 "suggest_segmentation": {"type": "boolean"},
                 "segmentation_reason": {"type": "string"},
-                "visual_evidence": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                },
+                "another_photo_needed": {"type": "boolean"},
+                "photo_instructions": {"type": "string"},
+                "photo_reason": {"type": "string"},
             },
             "required": [
-                "plant_identification",
-                "identification_confidence",
-                "flower_count_estimate",
-                "flower_count_confidence",
-                "flower_count_notes",
+                "is_bouquet", "bouquet_type", "distinct_plant_count", "plant_groups",
                 "suggest_segmentation",
                 "segmentation_reason",
-                "visual_evidence",
+                "another_photo_needed", "photo_instructions", "photo_reason",
             ],
         },
     },
 }
-
-ASSESSMENT_PROMPT = (
-    "Inspect the plant photograph and return the requested structured assessment. "
-    "Estimate the count of distinct visible blossoms, not leaves or petals; use 0 "
-    "when none are visible. If uncertain, provide a best integer estimate and mark "
-    "count confidence low. Identify the plant as a visual hypothesis. Recommend "
-    "segmentation when multiple flowers/plants or overlapping parts would benefit "
-    "from separate inspection. Never infer pet safety or toxicity."
-)
-
 
 def available_models() -> list[str]:
     """Return trained model folders with the files required for inference."""
@@ -241,7 +245,106 @@ def get_trained_model(name: str) -> TrainedModel:
 
 async def predict_trained(name: str, image: Image.Image) -> TrainedPrediction:
     """Run blocking torch and model-loading work off the async event loop."""
-    return await asyncio.to_thread(get_trained_model(name).predict, image)
+    rgb = image.convert("RGB")
+    image_key = image_digest(
+        rgb.width.to_bytes(4, "big") + rgb.height.to_bytes(4, "big") + rgb.tobytes()
+    )
+    cache_key = f"trained:{name}:{image_key}"
+    cached = get_cached_result(cache_key)
+    if cached is not None:
+        return TrainedPrediction.model_validate(cached).model_copy(update={"cache_hit": True})
+
+    prediction = await asyncio.to_thread(get_trained_model(name).predict, rgb)
+    cache_result(cache_key, prediction.model_dump(mode="json"))
+    return prediction
+
+
+@lru_cache(maxsize=1)
+def get_flower_detector():
+    """Load Grounding DINO tiny once, on the first trained-flow request."""
+    from transformers import pipeline
+
+    return pipeline(
+        "zero-shot-object-detection",
+        model="IDEA-Research/grounding-dino-tiny",
+        device=0 if torch.cuda.is_available() else -1,
+    )
+
+
+def _flower_boxes(image: Image.Image) -> list[tuple[tuple[int, int, int, int], float]]:
+    """Detect and deduplicate flower boxes before crop classification."""
+    with _DETECTOR_LOCK:
+        detections = get_flower_detector()(
+            image, candidate_labels=["flower"], threshold=FLOWER_DETECTION_THRESHOLD
+        )
+    candidates = []
+    for detection in detections:
+        box = detection["box"]
+        bounds = (
+            max(0, int(box["xmin"])), max(0, int(box["ymin"])),
+            min(image.width, int(box["xmax"])), min(image.height, int(box["ymax"])),
+        )
+        if bounds[2] - bounds[0] < 24 or bounds[3] - bounds[1] < 24:
+            continue
+        candidates.append((bounds, float(detection["score"])))
+    candidates.sort(key=lambda item: item[1], reverse=True)
+    kept = []
+    for bounds, score in candidates:
+        area = (bounds[2] - bounds[0]) * (bounds[3] - bounds[1])
+        overlaps = False
+        for other, _ in kept:
+            intersection = (
+                max(0, min(bounds[2], other[2]) - max(bounds[0], other[0]))
+                * max(0, min(bounds[3], other[3]) - max(bounds[1], other[1]))
+            )
+            other_area = (other[2] - other[0]) * (other[3] - other[1])
+            if intersection / (area + other_area - intersection) > 0.5:
+                overlaps = True
+                break
+        if overlaps:
+            continue
+        kept.append((bounds, score))
+        if len(kept) >= MAX_FLOWER_DETECTIONS:
+            break
+    return kept
+
+
+async def predict_trained_flow(name: str, image: Image.Image) -> TrainedPrediction:
+    """Classify the whole image and each zero-shot flower crop independently."""
+    full = await predict_trained(name, image)
+    full = full.model_copy(update={"toxicity": lookup_toxicity(full.predicted_class)})
+    box_key = (
+        f"flower-boxes:v1:{FLOWER_DETECTION_THRESHOLD}:{MAX_FLOWER_DETECTIONS}:"
+        f"{image.width}:{image.height}:{image_digest(image.tobytes())}"
+    )
+    cached_boxes = get_cached_result(box_key)
+    try:
+        if cached_boxes is None:
+            boxes = await asyncio.to_thread(_flower_boxes, image)
+            cache_result(box_key, {"boxes": boxes})
+        else:
+            boxes = cached_boxes["boxes"]
+    except Exception as exc:
+        return full.model_copy(update={"detection_status": "failed", "detection_error": str(exc)})
+    detections = []
+    for bounds, score in boxes:
+        crop = image.crop(bounds)
+        prediction = await predict_trained(name, crop)
+        buffer = io.BytesIO()
+        crop.save(buffer, format="JPEG", quality=85)
+        detections.append(FlowerDetection(
+            bounds=bounds,
+            detector_score=score,
+            crop_data_url=_data_url(buffer.getvalue()),
+            predicted_class=prediction.predicted_class,
+            confidence=prediction.confidence,
+            top_predictions=prediction.top_predictions,
+            toxicity=lookup_toxicity(prediction.predicted_class),
+        ))
+    return full.model_copy(update={
+        "detections": detections,
+        "detection_status": "completed" if detections else "no_flowers",
+    })
 
 
 def _data_url(data: bytes, media_type: str = "image/jpeg") -> str:
@@ -249,32 +352,48 @@ def _data_url(data: bytes, media_type: str = "image/jpeg") -> str:
 
 
 async def assess_with_spark(image_bytes: bytes, extra_instruction: str = "") -> PlantAssessment:
-    """Return Muse Spark's schema-validated plant and flower-count assessment."""
+    """Return Muse Spark's schema-validated multi-plant assessment."""
+    supported_classes = ", ".join(
+        item["class_name"] for item in load_toxicity_database()["plants"]
+    )
+    developer_prompt = (
+        PLANT_ASSESSMENT_PROMPT + "\nAllowed toxicity_lookup_key values: "
+        + supported_classes + ", unknown."
+    )
+    prompt_hash = image_digest(developer_prompt.encode("utf-8"))
+    cache_key = (
+        f"spark:v3:{SPARK_MODEL}:{prompt_hash}:"
+        f"{image_digest(image_bytes)}:"
+        f"{image_digest(extra_instruction.encode('utf-8'))}"
+    )
+    cached = get_cached_result(cache_key)
+    if cached is not None:
+        assessment = PlantAssessment.model_validate(cached)
+        return assessment.model_copy(
+            update={
+                "plant_groups": _with_toxicity(assessment).plant_groups,
+                "cache_hit": True,
+            }
+        )
+
     api_key = os.getenv("MODEL_API_KEY")
     if not api_key:
         raise RuntimeError("Set MODEL_API_KEY in the API server environment.")
     from openai import AsyncOpenAI
 
-    supported_classes = ", ".join(
-        item["class_name"] for item in load_toxicity_database()["plants"]
-    )
-    identity_instruction = (
-        f" Known lookup plant labels: {supported_classes}. When one is visually supported, "
-        "return its exact label as the plant identification. If none fit or the image is "
-        "ambiguous, return 'Unknown'."
-    )
     client = AsyncOpenAI(base_url=MODEL_API_BASE, api_key=api_key, timeout=120, max_retries=2)
     try:
         response = await client.chat.completions.create(
             model=SPARK_MODEL,
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": ASSESSMENT_PROMPT + identity_instruction + " " + extra_instruction},
+            messages=[
+                {"role": "developer", "content": developer_prompt},
+                {"role": "user", "content": [
+                    {"type": "text", "text": extra_instruction or "Assess this photograph."},
                     {"type": "image_url", "image_url": {"url": _data_url(image_bytes)}},
-                ],
-            }],
+                ]},
+            ],
             response_format=ASSESSMENT_SCHEMA,
+            extra_body={"prompt_cache_key": f"petsafe-plants-{prompt_hash[:20]}"},
             max_completion_tokens=SPARK_MAX_COMPLETION_TOKENS,
             reasoning_effort="minimal",
         )
@@ -290,24 +409,58 @@ async def assess_with_spark(image_bytes: bytes, extra_instruction: str = "") -> 
     if not content:
         raise RuntimeError("Muse Spark returned an empty assessment.")
     assessment = PlantAssessment.model_validate_json(content)
-    # Keep toxicity deterministic and source-backed; it is never requested from Spark.
-    return assessment.model_copy(
-        update={
-            "toxicity": lookup_toxicity(assessment.plant_identification),
-            "raw_meta_response": response.model_dump(mode="json"),
-        }
+    usage = response.usage
+    details = getattr(usage, "prompt_tokens_details", None)
+    input_tokens = getattr(usage, "prompt_tokens", 0) or 0
+    cached_tokens = (
+        details.get("cached_tokens") if isinstance(details, dict)
+        else getattr(details, "cached_tokens", None)
     )
+    assessment = assessment.model_copy(update={
+        "api_usage": SparkUsage(
+            input_tokens=input_tokens,
+            cached_input_tokens=cached_tokens,
+            output_tokens=getattr(usage, "completion_tokens", 0) or 0,
+            cache_hit_ratio=(cached_tokens / input_tokens
+                             if cached_tokens is not None and input_tokens else None),
+        ),
+        "raw_meta_response": response.model_dump(mode="json"),
+    })
+    # Keep toxicity deterministic and source-backed; it is never requested from Spark.
+    cache_result(cache_key, assessment.model_dump(mode="json"))
+    return _with_toxicity(assessment)
 
 
-def _crop_from_mask(
-    image: Image.Image, mask_record: Any
-) -> tuple[tuple[int, int, int, int], np.ndarray, bytes] | None:
-    """Map SAM's box-local raster to image pixels and encode a transparent crop."""
+def _with_toxicity(assessment: PlantAssessment) -> PlantAssessment:
+    """Attach verified local lookups to each visual hypothesis."""
+    groups = []
+    for group in assessment.plant_groups:
+        key = group.scientific_name if group.scientific_name.casefold() != "unknown" else group.toxicity_lookup_key
+        lookup = lookup_toxicity(key)
+        if lookup.matched_class is None and group.toxicity_lookup_key.casefold() != "unknown":
+            lookup = lookup_toxicity(group.toxicity_lookup_key)
+        groups.append(group.model_copy(update={"toxicity": lookup}))
+    return assessment.model_copy(update={"plant_groups": groups})
+
+
+@dataclass(eq=False)
+class MaskCandidate:
+    """A decoded, image-aligned mask before regional reassessment."""
+
+    object_id: str
+    bounds: tuple[int, int, int, int]
+    mask: np.ndarray
+    pixels: int
+    confidence: float | None
+
+
+def _mask_candidate(image: Image.Image, record: Any) -> MaskCandidate | None:
+    """Map a SAM mask into a cropped image-aligned boolean array."""
     from meta_sam_parser import decode_mask_to_raster
 
-    local = np.frombuffer(decode_mask_to_raster(mask_record.mask), dtype=np.uint8)
-    local = local.reshape(mask_record.mask.height, mask_record.mask.width)
-    bounds = mask_record.bounds
+    local = np.frombuffer(decode_mask_to_raster(record.mask), dtype=np.uint8)
+    local = local.reshape(record.mask.height, record.mask.width)
+    bounds = record.bounds
     left = max(0, int(np.floor(bounds.left)))
     top = max(0, int(np.floor(bounds.top)))
     right = min(image.width, int(np.ceil(bounds.right)))
@@ -317,18 +470,85 @@ def _crop_from_mask(
     local_mask = Image.fromarray(local * 255).resize(
         (right - left, bottom - top), resample=Image.Resampling.NEAREST
     )
-    full_mask = np.zeros((image.height, image.width), dtype=bool)
-    full_mask[top:bottom, left:right] = np.asarray(local_mask) > 0
-    ys, xs = np.where(full_mask)
-    if len(xs) < MIN_MASK_PIXELS:
+    mask = np.asarray(local_mask) > 0
+    ys, xs = np.where(mask)
+    pixels = len(xs)
+    if pixels < max(MIN_MASK_PIXELS, int(image.width * image.height * MIN_MASK_AREA_RATIO)):
+        return None
+    if pixels > image.width * image.height * 0.9:
+        return None
+    if xs.max() - xs.min() + 1 < MIN_CROP_SIDE or ys.max() - ys.min() + 1 < MIN_CROP_SIDE:
         return None
     crop_box = (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
-    rgba = np.zeros((image.height, image.width, 4), dtype=np.uint8)
-    rgba[:, :, :3] = np.asarray(image.convert("RGB"))
-    rgba[:, :, 3] = full_mask.astype(np.uint8) * 255
+    tight_bounds = (left + crop_box[0], top + crop_box[1], left + crop_box[2], top + crop_box[3])
+    raw_confidence = getattr(record, "confidence", None)
+    try:
+        confidence = float(raw_confidence) if raw_confidence is not None else None
+    except (TypeError, ValueError):
+        confidence = None
+    if confidence is not None and not np.isfinite(confidence):
+        confidence = None
+    return MaskCandidate(str(record.object_id), tight_bounds,
+                         mask[crop_box[1]:crop_box[3], crop_box[0]:crop_box[2]],
+                         pixels, confidence)
+
+
+def _mask_intersection(a: MaskCandidate, b: MaskCandidate) -> int:
+    left = max(a.bounds[0], b.bounds[0])
+    top = max(a.bounds[1], b.bounds[1])
+    right = min(a.bounds[2], b.bounds[2])
+    bottom = min(a.bounds[3], b.bounds[3])
+    if right <= left or bottom <= top:
+        return 0
+    a_slice = a.mask[top-a.bounds[1]:bottom-a.bounds[1], left-a.bounds[0]:right-a.bounds[0]]
+    b_slice = b.mask[top-b.bounds[1]:bottom-b.bounds[1], left-b.bounds[0]:right-b.bounds[0]]
+    return int(np.count_nonzero(a_slice & b_slice))
+
+
+def _mask_quality(candidate: MaskCandidate, image_area: int) -> float:
+    box = candidate.bounds
+    box_area = (box[2] - box[0]) * (box[3] - box[1])
+    size = min(1.0, (candidate.pixels / max(1, image_area * 0.02)) ** 0.5)
+    fill = candidate.pixels / max(1, box_area)
+    confidence = max(0.0, min(1.0, candidate.confidence)) if candidate.confidence is not None else 0.5
+    return 0.5 * size + 0.2 * fill + 0.3 * confidence
+
+
+def _select_mask_candidates(candidates: list[MaskCandidate], image_area: int) -> list[MaskCandidate]:
+    """Remove near-identical masks and select diverse, readable regions."""
+    ranked = sorted(candidates, key=lambda item: _mask_quality(item, image_area), reverse=True)
+    unique: list[MaskCandidate] = []
+    for candidate in ranked:
+        duplicate = False
+        for kept in unique:
+            intersection = _mask_intersection(candidate, kept)
+            union = candidate.pixels + kept.pixels - intersection
+            area_ratio = min(candidate.pixels, kept.pixels) / max(candidate.pixels, kept.pixels)
+            if intersection / max(1, union) >= 0.8 or (
+                area_ratio >= 0.65
+                and intersection / max(1, min(candidate.pixels, kept.pixels)) >= 0.92
+            ):
+                duplicate = True
+                break
+        if not duplicate:
+            unique.append(candidate)
+    selected: list[MaskCandidate] = []
+    while unique and len(selected) < MAX_SEGMENTS:
+        best = max(unique, key=lambda item: _mask_quality(item, image_area) +
+                   0.5 * (1 - max((_mask_intersection(item, prior) / item.pixels
+                                   for prior in selected), default=0)))
+        selected.append(best)
+        unique.remove(best)
+    return selected
+
+
+def _encode_mask_crop(image: Image.Image, candidate: MaskCandidate) -> bytes:
+    """Create a transparent PNG only for a selected region."""
+    rgba = np.asarray(image.crop(candidate.bounds).convert("RGBA")).copy()
+    rgba[:, :, 3] = candidate.mask.astype(np.uint8) * 255
     buffer = io.BytesIO()
-    Image.fromarray(rgba).crop(crop_box).save(buffer, format="PNG", optimize=True)
-    return crop_box, full_mask, buffer.getvalue()
+    Image.fromarray(rgba).save(buffer, format="PNG", optimize=True)
+    return buffer.getvalue()
 
 
 async def segment_and_assess(
@@ -336,8 +556,8 @@ async def segment_and_assess(
     image_bytes: bytes,
     class_names: list[str],
     prompt: str = "flower",
-) -> list[SegmentAssessment]:
-    """Use Meta SAM 3.1, then ask Muse Spark to assess each usable crop."""
+) -> tuple[list[SegmentAssessment], dict[str, int]]:
+    """Filter SAM masks before asking Muse Spark about informative crops."""
     api_key = os.getenv("MODEL_API_KEY")
     if not api_key:
         raise RuntimeError("Set MODEL_API_KEY in the API server environment.")
@@ -357,7 +577,7 @@ async def segment_and_assess(
                 ],
             }],
             stream=True,
-            metadata={"mask_encoding": "one_bit"},
+            metadata={"mask_encoding": "one_bit", "include_confidence": "true"},
         )
         parsed = parse_responses_stream(events, image_segmentation_format())
         result = await parsed.final_result()
@@ -365,26 +585,32 @@ async def segment_and_assess(
         await client.close()
 
     names = {name.casefold() for name in class_names}
-    segments: list[SegmentAssessment] = []
+    candidates: list[MaskCandidate] = []
+    mask_count = 0
     for record in result.records:
         if getattr(record, "kind", None) != "mask":
             continue
-        prepared = _crop_from_mask(image, record)
-        if prepared is None:
-            continue
-        crop_box, _mask, crop_bytes = prepared
+        mask_count += 1
+        candidate = _mask_candidate(image, record)
+        if candidate is not None:
+            candidates.append(candidate)
+    selected = _select_mask_candidates(candidates, image.width * image.height)
+    segments: list[SegmentAssessment] = []
+    for candidate in selected:
+        crop_bytes = _encode_mask_crop(image, candidate)
         assessment = await assess_with_spark(
             crop_bytes,
-            "This is a transparent-background crop of one SAM-selected flower region. "
-            "Assess only the visible selected region and preserve uncertainty.",
+            "This is a transparent-background crop of a SAM-selected plant region. "
+            "Assess only visible plant types in this crop and preserve uncertainty.",
         )
         segments.append(SegmentAssessment(
-            object_id=record.object_id,
-            bounds=crop_box,
+            object_id=candidate.object_id,
+            bounds=candidate.bounds,
             crop_data_url=_data_url(crop_bytes, "image/png"),
             assessment=assessment,
-            in_trained_taxonomy=assessment.plant_identification.casefold() in names,
+            in_trained_taxonomy=any(
+                group.plant_identification.casefold() in names for group in assessment.plant_groups
+            ),
         ))
-        if len(segments) >= MAX_SEGMENTS:
-            break
-    return segments
+    return segments, {"mask_count": mask_count, "filtered_count": mask_count - len(selected),
+                      "assessed_count": len(segments)}

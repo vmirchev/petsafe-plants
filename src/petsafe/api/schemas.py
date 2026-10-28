@@ -28,21 +28,47 @@ class ToxicityResult(BaseModel):
     lookup_note: str | None = None
 
 
-class PlantAssessment(BaseModel):
-    """Structured visual assessment returned by Muse Spark plus local lookup."""
+class PlantGroup(BaseModel):
+    """One visually distinct plant type in a Spark assessment."""
 
     model_config = ConfigDict(extra="forbid")
 
+    id: int
     plant_identification: str
+    scientific_name: str
+    toxicity_lookup_key: str
     identification_confidence: Literal["high", "medium", "low"]
-    flower_count_estimate: int = Field(ge=0)
-    flower_count_confidence: Literal["high", "medium", "low"]
-    flower_count_notes: str
+    visual_evidence: list[str]
+    needs_inspection: bool
+    toxicity: ToxicityResult | None = None
+
+
+class SparkUsage(BaseModel):
+    """Token usage for the actual Meta request, separate from the local result cache."""
+
+    input_tokens: int = 0
+    cached_input_tokens: int | None = None
+    output_tokens: int = 0
+    cache_hit_ratio: float | None = None
+
+
+class PlantAssessment(BaseModel):
+    """Structured multi-plant visual assessment and local toxicity lookups."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    is_bouquet: bool
+    bouquet_type: Literal["single_species", "mixed_species", "uncertain", "not_bouquet"]
+    distinct_plant_count: int = Field(ge=0)
+    plant_groups: list[PlantGroup]
     suggest_segmentation: bool
     segmentation_reason: str
-    visual_evidence: list[str]
-    toxicity: ToxicityResult | None = None
+    another_photo_needed: bool
+    photo_instructions: str
+    photo_reason: str
+    api_usage: SparkUsage | None = None
     raw_meta_response: dict[str, Any] | None = None
+    cache_hit: bool = False
 
 
 class ClassScore(BaseModel):
@@ -50,6 +76,18 @@ class ClassScore(BaseModel):
 
     class_name: str
     probability: float = Field(ge=0, le=1)
+
+
+class FlowerDetection(BaseModel):
+    """One zero-shot flower box and its independent classifier result."""
+
+    bounds: tuple[int, int, int, int]
+    detector_score: float = Field(ge=0, le=1)
+    crop_data_url: str
+    predicted_class: str
+    confidence: float = Field(ge=0, le=1)
+    top_predictions: list[ClassScore]
+    toxicity: ToxicityResult | None = None
 
 
 class TrainedPrediction(BaseModel):
@@ -61,6 +99,10 @@ class TrainedPrediction(BaseModel):
     confidence_is_calibrated: Literal[False] = False
     top_predictions: list[ClassScore]
     toxicity: ToxicityResult | None = None
+    detections: list[FlowerDetection] = Field(default_factory=list)
+    detection_status: Literal["not_run", "completed", "no_flowers", "failed"] = "not_run"
+    detection_error: str | None = None
+    cache_hit: bool = False
 
 
 class SegmentAssessment(BaseModel):
@@ -81,6 +123,9 @@ class SegmentationResult(BaseModel):
     reason: list[str]
     prompt: str | None = None
     segments: list[SegmentAssessment] = Field(default_factory=list)
+    mask_count: int = 0
+    filtered_count: int = 0
+    assessed_count: int = 0
     error: str | None = None
 
 

@@ -11,6 +11,7 @@
 !compose.yaml
 !web/
 !web/**
+web/archive/
 
 # Track Jupyter notebooks.
 !notebooks/
