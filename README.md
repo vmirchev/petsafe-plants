@@ -16,7 +16,7 @@ The project explores whether combining specialized computer vision models with M
 
 **Current stage:** Dataset preparation, model experimentation, and evaluation.
 
-PetSafe Plants does not provide veterinary advice or a validated toxicity assessment. The app's 101-entry cat-toxicity reference is a curated source lookup; it does not confirm the visual identification or guarantee safety.
+PetSafe Plants does not provide veterinary advice or a validated toxicity assessment. The app's 101-entry cat and dog toxicity reference is a curated source lookup; it does not confirm the visual identification or guarantee safety.
 
 ## Research Objectives
 
@@ -42,6 +42,8 @@ The initial experiments use frozen pretrained image encoders with trained classi
 | Meta SAM 3.1 | Planned segmentation and multi-plant analysis |
 
 The objective is not simply to maximize classification accuracy but to understand how the models behave on difficult photographs.
+
+Notebook 04 compared all three pretrained classifiers. SigLIP2 was selected for continued training and app inference because it tied DINOv3 at 96.4% validation accuracy while achieving lower validation loss (0.144 vs. 0.213). On the 111-image internal test split, SigLIP2 scored 98.2% accuracy and 98.4% macro F1; DINOv3 scored 97.3% and 97.5%, while EfficientNet-B2 scored 81.1% and 78.7%. These are single-seed results, and possible cross-split near-duplicates could inflate the scores, so they are evidence for a promising candidate rather than a reliable performance estimate.
 
 ## Dataset
 
@@ -84,6 +86,7 @@ The repository contains Jupyter notebooks for reproducible ML experiments and a 
 | `05_Test_Inference.ipynb` | Evaluation on the 180-image internal holdout (notebook section number 06) |
 | `06_Compare_Muse_Spark.ipynb` | Optional comparison against Meta Muse Spark (notebook section number 05) |
 | `07_Upload_Spark_SAM_Flow.ipynb` | Interactive image upload, Muse Spark identification, optional SAM 3.1 segmentation, and Spark on segmented crops |
+| `08_SigLIP2_Error_Review_Meta.ipynb` | Reviews every saved SigLIP2 internal-test mistake plus five seeded correct examples with Muse Spark; caches responses in Drive |
 
 Notebook 06 evaluates an **internal holdout**, not an independent external dataset.
 
@@ -115,15 +118,19 @@ Run notebook 01 for dataset exploration, followed by notebook 03 for model train
 
 Notebook 04 compares saved training results. The Muse Spark comparison is in `06_Compare_Muse_Spark.ipynb`; internal holdout inference is in `05_Test_Inference.ipynb`.
 
-DINOv3 requires approved Hugging Face access. Muse Spark experiments require a Meta Model API key.
+Muse Spark experiments require a Meta Model API key.
 
 API calls may incur charges.
 
 ## Inference API
 
-The API compares two independent paths. **Left:** full-image classifier → [Grounding DINO tiny](https://huggingface.co/IDEA-Research/grounding-dino-tiny) zero-shot flower boxes → the same trained classifier on each box crop. Grounding DINO detects boxes; it does not produce segmentation masks. **Right:** Muse Spark scene assessment → optional SAM 3.1 masks → Muse Spark on selected regions. SAM is used only on the right. Both paths attach local source-backed toxicity lookups to their candidate identities. Grounding DINO is Apache-2.0 licensed, loads on the first trained-flow request, and downloads its weights to the configured Hugging Face cache. Detection boxes and crop predictions are hypotheses; detector scores and classifier probabilities are not calibrated safety confidence. Up to six flower boxes are shown by default. Set `PETSAFE_MAX_FLOWER_DETECTIONS` and `PETSAFE_FLOWER_DETECTION_THRESHOLD` to adjust this. It does not train models. Set `PETSAFE_RUNS_DIR` to the experiment directory containing `efficientnet_b2/`, `dinov3/`, and `siglip2/`; each selected model needs `best_head.pt`, `config.json`, and `class_mapping.json` from notebook 03. Saved classifier weights and the dataset remain outside this repository.
+The API compares two independent paths. **Left:** full-image classifier → [Grounding DINO tiny](https://huggingface.co/IDEA-Research/grounding-dino-tiny) zero-shot flower boxes → the same trained classifier on each box crop. Grounding DINO detects boxes; it does not produce segmentation masks. **Right:** Muse Spark scene assessment → optional SAM 3.1 masks → Muse Spark on selected regions. SAM is used only on the right. Both paths attach local source-backed toxicity lookups to their candidate identities. Grounding DINO is Apache-2.0 licensed, loads on the first trained-flow request, and downloads its weights to the configured Hugging Face cache. Detection boxes and crop predictions are hypotheses; detector scores and classifier probabilities are not calibrated safety confidence. Up to six flower boxes are shown by default. Set `PETSAFE_MAX_FLOWER_DETECTIONS` and `PETSAFE_FLOWER_DETECTION_THRESHOLD` to adjust this. It does not train models. Set `PETSAFE_RUNS_DIR` to the experiment directory containing `siglip2/`; the model needs `best_head.pt`, `config.json`, and `class_mapping.json` from notebook 03. Saved classifier weights and the dataset remain outside this repository.
 
-After each visual identification, the API performs a deterministic local lookup in `data/toxicity/plant_toxicity.json` and returns the status, taxonomic scope, and source links alongside the prediction. The 101 plant labels are a curated selection of commonly encountered house, garden, and bouquet plants, not a statistically ranked global list. Spark does not generate toxicity claims. The table is a limited reference, not a diagnosis or a guarantee of safety; unknown or unmatched identities remain unknown. `Hippeastrum` and `Amaryllis` have separate cited entries because the common name “amaryllis” refers to both; that common name alone gives an ambiguous lookup. Set `PETSAFE_TOXICITY_DB` to use a different copy. Docker includes this JSON file in the API image.
+After each visual identification, the API performs a deterministic local lookup in `data/toxicity/plant_toxicity.json` and returns separate cat and dog statuses, taxonomic scope, possible clinical signs, and source links alongside the prediction. The top-level `toxicity_status` and `clinical_effects` fields remain the cat result for existing clients; `dog_toxicity` contains the separately reviewed dog result. The 101 plant labels are a curated selection of commonly encountered house, garden, and bouquet plants, not a statistically ranked global list. Spark does not generate toxicity claims. The table is a limited reference, not a diagnosis or a guarantee of safety; unknown or unmatched identities remain unknown. `Hippeastrum` and `Amaryllis` have separate cited entries because the common name “amaryllis” refers to both; that common name alone gives an ambiguous lookup. Set `PETSAFE_TOXICITY_DB` to use a different copy. Docker includes this JSON file in the API image.
+
+All 101 plant entries have separate cat and dog reviews with source links, the source taxon, possible clinical signs where reported, and exposure or taxonomic qualifiers. The records use the separate [ASPCA cat](https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list) and [dog](https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list) lists, [ASPCA plant profiles](https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/), the [Merck Veterinary Manual](https://www.merckvetmanual.com/toxicology/poisonous-plants/houseplants-and-ornamentals-toxic-to-animals), and [Pet Poison Helpline profiles](https://www.petpoisonhelpline.com/poison/rubber-tree-plant/) for croton and rubber tree. `Lilium` and `Hemerocallis` are listed as toxic to cats and non-toxic to dogs; the cat kidney-failure warning is never copied to the dog result. A `not_listed` clinical-effects record means the linked source gives no plant-specific signs, not that ingestion is symptom-free. The classification and clinical-effects reporting status are separate: ASPCA lists money tree as non-toxic yet mentions possible gastrointestinal signs. No uniform severity score is assigned because the sources do not provide a consistent plant-by-plant scale, and effects depend on the animal, plant part, and exposure. Where a source names only one species within a broader class, the class status remains `unknown` and the narrower scope is shown.
+
+The suggested [Kaggle ASPCA Plant Toxicity dataset](https://www.kaggle.com/datasets/varoooooon/aspca-plant-toxicity) was considered as a discovery lead. Its file details and reuse license could not be independently verified here, so no Kaggle rows were copied into this repository. Each included record cites the underlying veterinary source directly.
 
 The API keeps up to 256 inference result payloads in a process-local LRU cache, keyed by SHA-256 image hashes and model/request type. It caches trained-model predictions and Muse Spark assessments, including segmented-crop Spark responses. It does not store uploaded image bytes and the cache clears when the API process restarts. Set `PETSAFE_RESULT_CACHE_SIZE=0` to disable caching or change the limit; SAM segmentation itself is rerun when requested. Meta's separate prompt cache is automatic; the API sends a stable key for its shared developer prompt. A Meta cached-token count of zero means no provider cache reuse was reported for that request, while “not reported” means the provider omitted the cached-token detail.
 
@@ -135,14 +142,31 @@ export PETSAFE_RUNS_DIR="/path/to/plant_export_v20261026_2355546_holdout10_seed4
 export MODEL_API_KEY="your-meta-model-api-key"
 # Optional; defaults to 3000 completion tokens for multi-plant structured responses.
 export PETSAFE_SPARK_MAX_COMPLETION_TOKENS="3000"
-# Optional, required when the DINOv3 model artifacts are selected:
 export HF_TOKEN="your-hugging-face-token"
 uv run uvicorn petsafe.api.app:app --app-dir src --host 127.0.0.1 --port 8000 --reload
 ```
 
 Open `http://127.0.0.1:8000/` for the web client. It is a static HTML/CSS/JavaScript page served by FastAPI, so it needs no Node.js build step.
 
-`PETSAFE_RUNS_DIR` should point to the run root, with model subdirectories directly beneath it. For example, the notebook writes `.../runs/plant_export_v20261026_2355546_holdout10_seed42/efficientnet_b2/best_head.pt`. Make the notebook's Google Drive run folder available to the API process by mounting that drive or copying the run artifacts to a local folder. The default model is EfficientNet-B2. Choose `dinov3` or `siglip2` with the `model_name` form field when those artifacts are available. DINOv3 also requires accepted Hugging Face model access and `HF_TOKEN`.
+### Botanical investigation workspace
+
+The browser uses [Motion](https://motion.dev/) (MIT licensed) for spring-style thought bubbles, native Web Animations for three moving search circles, and a CSS sweep over the photograph while a scan is active. Motion loads from a pinned jsDelivr URL, with a native animation fallback; no Node.js build step, hosted fonts, or paid visual assets are required. The photo moves into the center of the investigation canvas when a scan starts. Actual SAM specimens float over the photo when masks arrive; the comparison report appears below the canvas as model results arrive. Scanning questions are investigation prompts, never inferred findings or estimated progress percentages. The sweep and search circles are decorative and do not claim to mark identified plants.
+
+The UI reads real events from a multipart POST to `/api/flows/compare-stream`: `analyzing_scene`, `scene_analyzed`, `trained_ready`, optional `segmenting`, `segments_ready`, `identifying_regions`, individual `region_assessed` events, and finally `completed` or `error`. The Muse Spark → SAM branch now runs independently of the classifier → DINO branch, so real SAM crops can appear while DINO is still working; `completed` waits for both branches. After the complete payload arrives, the browser spends 1.8 seconds presenting the scan and specimen transition before rendering the final report; source-backed hazard warnings appear immediately. This presentation pause is skipped for reduced motion and never delays API processing. The ordinary JSON comparison endpoint remains available. Scene and regional events already include their synchronous local toxicity lookups, so the UI does not simulate a separate lookup delay. SAM selection thresholds, model prompts, caches, and the left-hand detector/classifier behavior are unchanged.
+
+Selected transparent SAM crops animate from their real image bounds into movable specimen cards over the photo. Drag a card or use arrow keys to rearrange it within the canvas. Hover, focus, or drag a specimen to highlight its original mask and connecting line; select it for identification details, uncertainty, and source links. Only selected masks are sent to the browser; the existing filter counts describe omitted masks. Raw Meta responses and token/cache statistics remain available in the reports. Warnings appear when evidence arrives, independently of animations.
+
+Uploading a follow-up photo preserves the previous complete or partial report in this tab. Each image is assessed independently; the app does not send earlier reports as conversational context. History disappears on reload or tab closure. Replacing/removing a photo cancels its stream and ignores stale responses; already running local inference threads or provider requests may still finish. Reduced-motion preferences disable decorative movement by default. The **Animations** control shows when the system preference has disabled motion and lets you explicitly enable it for this page; the choice is saved in the browser. Keyboard users can open and close the specimen inspection dialog.
+
+Run the dependency-free state/stream tests with Node.js 20 or later:
+
+```bash
+node --test tests/web-investigation.test.mjs
+```
+
+For a browser smoke check with the API running: upload a single plant and select **Skip segmentation**, then a mixed scene with **Always segment**. Confirm that the photo centers during scanning, results appear below it, real crops float over the photo, cards can be dragged or moved with arrow keys, and source lines follow the right locations. Open a crop in the inspection dialog. Also check **Automatic**, a no-plant image, unavailable/empty SAM results, a follow-up upload while inference is pending, a narrow mobile viewport, and the operating system's reduced-motion setting. No API results are simulated in the production client.
+
+`PETSAFE_RUNS_DIR` should point to the run root, with model subdirectories directly beneath it. For example, the notebook writes `.../runs/plant_export_v20261026_2355546_holdout10_seed42/siglip2/best_head.pt`. Make the notebook's Google Drive run folder available to the API process by mounting that drive or copying the run artifacts to a local folder. SigLIP2 is the only active pretrained classifier.
 
 ### Endpoints
 
@@ -153,32 +177,35 @@ Open `http://127.0.0.1:8000/` for the web client. It is a static HTML/CSS/JavaSc
 | `POST /api/flows/trained` | Full-image and per-flower trained model predictions, Grounding DINO boxes, and local toxicity-reference lookups; multipart fields `image_file` and optional `model_name` |
 | `POST /api/flows/muse-spark` | Muse Spark JSON assessment and local toxicity-reference lookup on the uploaded image |
 | `POST /api/flows/compare` | Run both sides together, conditionally call SAM, reassess each segment with Muse Spark, and look up each returned identity |
+| `POST /api/flows/compare-stream` | The same comparison with real SSE progress events; accepts the same multipart fields and ends with the complete comparison payload |
 
 Open `http://127.0.0.1:8000/docs` for the interactive API schema. Example comparison request:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/flows/compare \
   -F "image_file=@plant.jpg" \
-  -F "model_name=efficientnet_b2"
+  -F "model_name=siglip2"
 ```
 
-The comparison endpoint requests SAM when Muse Spark suggests segmentation, reports multiple distinct plant types, marks a bouquet mixed or uncertain, or marks a low-confidence group as needing inspection. Multiple flowers of one plant type alone do not trigger SAM. Use `force_sam=true` or `skip_sam=true` to override that choice, and set `sam_prompt=plant` to segment whole plants instead of flowers. After SAM, the API drops tiny or unreadable masks, removes near-duplicates using mask overlap, and selects up to six diverse regions before re-assessing them with Spark. The response reports mask counts before and after filtering. If no useful region remains, the full-scene assessment is retained and an uncertain scene can request another photo. Spark returns plant groups, bouquet status, additional-photo guidance, and Meta prompt-cache token usage (`cached_input_tokens` and `cache_hit_ratio`). A toxicity lookup accompanies each plant group and includes reference links. Classifier probabilities are not calibrated confidence scores. The local result cache is separate from Meta's prompt cache; on a local cache hit, displayed token usage describes the original Meta request.
+The comparison endpoint requests SAM when Muse Spark suggests segmentation, reports multiple distinct plant types, marks a bouquet mixed or uncertain, or marks a low-confidence group as needing inspection. Multiple flowers of one plant type alone do not trigger SAM. Spark also returns a structured `segmentation_target` and `segmentation_target_reason`: `flower` for flower heads or `plant` for whole plants. With the default `sam_prompt=auto`, that target is sent to SAM when segmentation runs; `sam_prompt=flower` or `sam_prompt=plant` overrides it manually. The corresponding SAM concept prompts are `flower head` and `plant`. Use `force_sam=true` or `skip_sam=true` to override the segmentation decision. After SAM, the API drops tiny or unreadable masks, removes near-duplicates using mask overlap, and selects up to six diverse regions before re-assessing them with Spark. The response reports the actual SAM prompt, mask counts before and after filtering, and the chosen target. If no useful region remains, the full-scene assessment is retained and an uncertain scene can request another photo. Spark returns plant groups, bouquet status, additional-photo guidance, and Meta prompt-cache token usage (`cached_input_tokens` and `cache_hit_ratio`). A toxicity lookup accompanies each plant group and includes reference links. Classifier probabilities are not calibrated confidence scores. The local result cache is separate from Meta's prompt cache; on a local cache hit, displayed token usage describes the original Meta request.
 
 The API accepts images up to 12 MB, normalizes the longest side to 2,048 pixels, and sends the normalized image to the selected Meta services. Keep the server private while it can make paid Model API calls; this initial API has no user authentication or rate limiting.
 
 ### Run with Docker Compose
 
-Docker builds the API image and mounts saved model artifacts read-only. The image excludes datasets, notebooks, local environments, and model weights. Create a local Compose environment file, then set the artifact directory and API key there:
+Docker builds the API image, mounts saved model artifacts read-only, and bind-mounts `web/` read-only for fast UI editing. The image excludes datasets, notebooks, local environments, and model weights. Create a local Compose environment file, then set the artifact directory and API key there:
 
 ```bash
 cp .env.example .env
 ```
 
-Set `MODEL_API_KEY` and `PETSAFE_RUNS_HOST_DIR` in `.env`. The latter must point to the run root containing the model folders, for example `/path/to/drive/AI/meta-global-hackaton/runs/plant_export_v20261026_2355546_holdout10_seed42`. Set `HF_TOKEN` too if you plan to select DINOv3. Then build and start the API:
+Set `MODEL_API_KEY` and `PETSAFE_RUNS_HOST_DIR` in `.env`. The latter must point to the run root containing the model folders, for example `/path/to/drive/AI/meta-global-hackaton/runs/plant_export_v20261026_2355546_holdout10_seed42`. Build the API once and start it:
 
 ```bash
-docker compose up --build
+docker compose up --build -d api
 ```
+
+If the API image already exists, apply the new `web/` mount once with `docker compose up -d --no-deps api`. After that, edit files in `web/` and refresh the browser; no Compose command or image rebuild is needed for UI-only changes. Use a hard refresh if the browser shows cached CSS or JavaScript. Rebuild with `docker compose up --build -d api` when Python code or dependencies change.
 
 The web client is at `http://127.0.0.1:8000/`, and the interactive API docs are at `http://127.0.0.1:8000/docs`. Compose persists Hugging Face and Torch model caches in a Docker volume. Stop the service with `docker compose down`. The model run directory is mounted read-only, and credentials are passed at runtime rather than baked into the image.
 
@@ -225,7 +252,7 @@ This repository distinguishes work developed during the hackathon from existing 
 ### Pre-existing or External Resources
 
 - Original plant photographs and source archive.
-- Pretrained weights for EfficientNet-B2, DINOv3, and SigLIP2.
+- Pretrained SigLIP2 weights used by the active classifier. EfficientNet-B2 and DINOv3 appear only as historical experiment baselines.
 - PyTorch, torchvision, Hugging Face libraries, and other dependencies.
 - Meta's models and inference services.
 - Earlier classifier experiments used as background research.

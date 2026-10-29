@@ -1,12 +1,12 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.3.0",
   "created_date": "2026-10-27",
-  "last_reviewed_date": "2026-10-27",
-  "intended_use": "Reference data for cat-related plant toxicity lookup after a plant has been identified. Not a diagnostic or emergency-care tool.",
+  "last_reviewed_date": "2026-10-29",
+  "intended_use": "Reference data for cat- and dog-related plant toxicity lookup after a plant has been identified. Not a diagnostic or emergency-care tool.",
   "status_definitions": {
-    "toxic": "The cited source explicitly lists the matched plant taxon as toxic to cats.",
-    "non_toxic": "The cited source explicitly lists the matched plant taxon as non-toxic to cats. This is not a guarantee that ingestion cannot cause illness. ASPCA-listed non-toxic entries are reference classifications, not a guarantee against irritation or illness.",
-    "unknown": "The source does not establish a class-wide status, or the class-to-source taxon match is too broad or uncertain. Do not interpret as safe."
+    "toxic": "The cited source explicitly lists the matched plant taxon as toxic to the specified animal.",
+    "non_toxic": "The cited source explicitly lists the matched plant taxon as non-toxic to the specified animal; ingestion can still cause symptoms.",
+    "unknown": "No class-wide status is established for the specified animal, or the taxon match is uncertain. Do not interpret as safe."
   },
   "general_note": "Toxicity depends on the plant taxon and exposure. Common names can refer to different plants. If ingestion is suspected, contact a veterinarian or animal poison-control service; do not rely on this file for treatment decisions.",
   "sources": {
@@ -39,6 +39,36 @@
       "title": "Do You Know Which Flowers and Plants are Toxic to Pets? Our Experts Explain!",
       "url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
       "accessed_date": "2026-10-27"
+    },
+    "aspca_dog_list": {
+      "publisher": "ASPCA Animal Poison Control",
+      "title": "Toxic and Non-Toxic Plant List — Dogs",
+      "url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+      "accessed_date": "2026-10-29"
+    },
+    "aspca_houseplants_2025": {
+      "publisher": "ASPCA Animal Poison Control",
+      "title": "These Houseplants Can Cause Trouble for Your Pets",
+      "url": "https://www.aspca.org/news/these-houseplants-can-cause-trouble-your-pets",
+      "accessed_date": "2026-10-29"
+    },
+    "aspca_houseplants_2019": {
+      "publisher": "ASPCA Animal Poison Control",
+      "title": "Is That Houseplant Safe for Your Pets?",
+      "url": "https://www.aspca.org/news/houseplant-safe-your-pets",
+      "accessed_date": "2026-10-29"
+    },
+    "pet_poison_rubber": {
+      "publisher": "Pet Poison Helpline",
+      "title": "Rubber Tree Plant",
+      "url": "https://www.petpoisonhelpline.com/poison/rubber-tree-plant/",
+      "accessed_date": "2026-10-29"
+    },
+    "pet_poison_croton": {
+      "publisher": "Pet Poison Helpline",
+      "title": "Croton",
+      "url": "https://www.petpoisonhelpline.com/poison/croton/",
+      "accessed_date": "2026-10-29"
     }
   },
   "plants": [
@@ -49,7 +79,7 @@
         "Chinese evergreen"
       ],
       "taxonomic_scope": "Genus-level dataset class; the ASPCA listing specifically identifies Aglaonema modestum.",
-      "toxicity_status": "unknown",
+      "toxicity_status": "toxic",
       "potential_hazard": true,
       "evidence": [
         {
@@ -58,9 +88,66 @@
           "evidence_taxon": "Aglaonema modestum",
           "evidence_status": "toxic",
           "match_scope": "partial; do not generalize the one listed species to every Aglaonema species"
+        },
+        {
+          "source_id": "aspca_houseplants_2025",
+          "source_match": "Aglaonema spp.; toxic to cats",
+          "evidence_taxon": "Aglaonema spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus-level ASPCA discussion"
         }
       ],
-      "review_note": "Keep as unknown at the model's genus-level granularity. Treat a possible match conservatively because a species in this genus is listed toxic."
+      "review_note": "Cat status uses the linked genus-level ASPCA discussion source. Verify the photographed plant identity before using this reference.",
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Aglaonema spp.",
+        "match_scope": "genus_level",
+        "reported_signs": [
+          "mouth irritation and pain",
+          "drooling",
+          "retching",
+          "nausea",
+          "loss of appetite",
+          "vomiting",
+          "diarrhea"
+        ],
+        "serious_effects": [
+          "throat swelling with breathing difficulty"
+        ],
+        "source_url": "https://www.aspca.org/news/these-houseplants-can-cause-trouble-your-pets",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "ASPCA discusses the genus; throat swelling is rare with large exposures."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Aglaonema spp.",
+        "match_scope": "genus_level",
+        "source_url": "https://www.aspca.org/news/these-houseplants-can-cause-trouble-your-pets",
+        "lookup_note": "ASPCA names Aglaonema spp. among oxalate-containing plants toxic to pets.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Aglaonema spp.",
+          "match_scope": "genus_level",
+          "reported_signs": [
+            "mouth irritation and pain",
+            "drooling",
+            "retching",
+            "nausea",
+            "loss of appetite",
+            "vomiting",
+            "diarrhea"
+          ],
+          "serious_effects": [
+            "throat swelling with breathing difficulty"
+          ],
+          "source_url": "https://www.aspca.org/news/these-houseplants-can-cause-trouble-your-pets",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "ASPCA discusses the genus; throat swelling is rare with large exposures."
+        }
+      }
     },
     {
       "class_name": "aloe vera",
@@ -81,7 +168,45 @@
           "match_scope": "species"
         }
       ],
-      "review_note": "The ASPCA list groups Aloe vera under the common name Aloe."
+      "review_note": "The ASPCA list groups Aloe vera under the common name Aloe.",
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Aloe vera",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "lethargy",
+          "diarrhea"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/aloe",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA profile notes that the inner gel is considered edible; this does not apply to every plant part."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Aloe vera",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Aloe () (Aloe vera).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Aloe vera",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "lethargy",
+            "diarrhea"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/aloe",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The ASPCA profile notes that the inner gel is considered edible; this does not apply to every plant part."
+        }
+      }
     },
     {
       "class_name": "chamaedorea elegans",
@@ -101,7 +226,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Chamaedorea elegans",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/bamboo-palm",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA non-toxic profile does not list plant-specific clinical signs; this is not a guarantee against stomach upset."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Chamaedorea elegans",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Bamboo Palm (Miniature Fish Tail Dwarf Palm, Parlor Palm, Good Luck Palm) (Chamaedorea elegans).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Chamaedorea elegans",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "chlorophytum comosum",
@@ -123,7 +278,42 @@
           "match_scope": "species",
           "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/spider-plant"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Chlorophytum spp.",
+        "match_scope": "genus_level",
+        "reported_signs": [
+          "vomiting",
+          "drooling",
+          "retching",
+          "temporary loss of appetite"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.merckvetmanual.com/toxicology/poisonous-plants/houseplants-and-ornamentals-toxic-to-animals",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Merck reports these signs in cats after eating Chlorophytum spp.; ASPCA lists C. comosum as non-toxic."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Chlorophytum comosum",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Anthericum Comosum (Ribbon Plant, Spider Plant, Spider Ivy) (Chlorophytum comosum).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Chlorophytum comosum",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "chrysanthemum",
@@ -143,7 +333,48 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Chrysanthemum spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "diarrhea",
+          "excessive drooling",
+          "incoordination",
+          "dermatitis"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/chrysanthemum",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Chrysanthemum spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Chrysanthemum (Daisy, Mum; many varieties) (Chrysanthemum spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Chrysanthemum spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "diarrhea",
+            "excessive drooling",
+            "incoordination",
+            "dermatitis"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/chrysanthemum",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "crassula ovata",
@@ -164,7 +395,46 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Crassula argentea",
+        "match_scope": "accepted_synonym",
+        "reported_signs": [
+          "vomiting",
+          "depression",
+          "incoordination"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/jade-plant",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA profile uses C. argentea, which Kew lists as a synonym of C. ovata.",
+        "taxonomy_source_url": "https://npgsweb.ars-grin.gov/gringlobal/taxon/taxonomydetail?id=12030"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Crassula ovata",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/news/houseplant-safe-your-pets",
+        "lookup_note": "ASPCA names Crassula ovata and discusses signs in cats and dogs.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Crassula argentea",
+          "match_scope": "accepted_synonym",
+          "reported_signs": [
+            "vomiting",
+            "depression",
+            "incoordination"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/jade-plant",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The ASPCA profile uses C. argentea, which Kew lists as a synonym of C. ovata."
+        }
+      }
     },
     {
       "class_name": "cyclamen",
@@ -183,7 +453,53 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Cyclamen spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "drooling",
+          "vomiting",
+          "diarrhea"
+        ],
+        "serious_effects": [
+          "abnormal heart rhythm",
+          "seizures",
+          "death"
+        ],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/cyclamen",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "ASPCA reports the serious effects after large ingestions of tubers."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Cyclamen spp",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Cyclamen (Sowbread) (Cyclamen spp).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Cyclamen spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "drooling",
+            "vomiting",
+            "diarrhea"
+          ],
+          "serious_effects": [
+            "abnormal heart rhythm",
+            "seizures",
+            "death"
+          ],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/cyclamen",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "ASPCA reports the serious effects after large ingestions of tubers."
+        }
+      }
     },
     {
       "class_name": "dieffenbachia",
@@ -203,7 +519,46 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Dieffenbachia",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth and tongue irritation or burning",
+          "excessive drooling",
+          "vomiting",
+          "difficulty swallowing"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/dieffenbachia",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Dieffenbachia spp.",
+        "match_scope": "genus_level",
+        "source_url": "https://www.aspca.org/news/these-houseplants-can-cause-trouble-your-pets",
+        "lookup_note": "ASPCA names Dieffenbachia spp. among oxalate-containing plants toxic to pets.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Dieffenbachia",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth and tongue irritation or burning",
+            "excessive drooling",
+            "vomiting",
+            "difficulty swallowing"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/dieffenbachia",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "epipremnum aureum",
@@ -225,7 +580,46 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Epipremnum aureum",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth and tongue irritation or burning",
+          "excessive drooling",
+          "vomiting",
+          "difficulty swallowing"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/golden-pothos",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Epipremnum aureum",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Devils Ivy (Pothos, Golden Pothos, Taro Vine, Ivy Arum) (Epipremnum aureum).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Epipremnum aureum",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth and tongue irritation or burning",
+            "excessive drooling",
+            "vomiting",
+            "difficulty swallowing"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/golden-pothos",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "euphorbia pulcherrima",
@@ -246,7 +640,43 @@
           "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/poinsettia"
         }
       ],
-      "source_qualification": "ASPCA describes the sap as irritating and notes that poinsettia toxicity is generally over-rated; retain the toxic flag without implying that every exposure is severe."
+      "source_qualification": "ASPCA describes the sap as irritating and notes that poinsettia toxicity is generally over-rated; retain the toxic flag without implying that every exposure is severe.",
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Euphorbia pulcherrima",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth and stomach irritation",
+          "occasional vomiting"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/poinsettia",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "ASPCA describes poinsettia toxicity as generally overrated; retain the toxic listing without implying severe effects from every exposure."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Euphorbia pulcherrima",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Poinsettia () (Euphorbia pulcherrima).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Euphorbia pulcherrima",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth and stomach irritation",
+            "occasional vomiting"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/poinsettia",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "ASPCA describes poinsettia toxicity as generally overrated; retain the toxic listing without implying severe effects from every exposure."
+        }
+      }
     },
     {
       "class_name": "hemerocallis",
@@ -266,7 +696,44 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Hemerocallis spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "loss of appetite",
+          "lethargy"
+        ],
+        "serious_effects": [
+          "kidney failure",
+          "death"
+        ],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/day-lilies-many-varieties",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "ASPCA identifies these effects specifically in cats."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Hemerocallis spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/day-lilies-many-varieties",
+        "lookup_note": "ASPCA lists this true lily as non-toxic to dogs but highly toxic to cats. Non-toxic is not symptom-free.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Hemerocallis spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/day-lilies-many-varieties",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "monstera deliciosa",
@@ -287,7 +754,46 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Monstera deliciosa",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth and tongue irritation or burning",
+          "excessive drooling",
+          "vomiting",
+          "difficulty swallowing"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/hurricane-plant",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Monstera deliciosa",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Ceriman (Cutleaf Philodendron, Hurricane Plant, Swiss Cheese Plant, Mexican Breadfruit) (Monstera deliciosa).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Monstera deliciosa",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth and tongue irritation or burning",
+            "excessive drooling",
+            "vomiting",
+            "difficulty swallowing"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/hurricane-plant",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "narcissus",
@@ -308,7 +814,55 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Narcissus spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "drooling",
+          "diarrhea"
+        ],
+        "serious_effects": [
+          "convulsions",
+          "low blood pressure",
+          "tremors",
+          "abnormal heart rhythm"
+        ],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/narcissus",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "ASPCA reports the serious signs after large ingestions and identifies bulbs as the most poisonous part."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Narcissus spp",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Daffodil (Narcissus, Jonquil, Paper White) (Narcissus spp).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Narcissus spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "drooling",
+            "diarrhea"
+          ],
+          "serious_effects": [
+            "convulsions",
+            "low blood pressure",
+            "tremors",
+            "abnormal heart rhythm"
+          ],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/narcissus",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "ASPCA reports the serious signs after large ingestions and identifies bulbs as the most poisonous part."
+        }
+      }
     },
     {
       "class_name": "nephrolepis exaltata",
@@ -335,7 +889,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Nephrolepis exalta bostoniensis",
+        "match_scope": "variety_level",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/boston-fern",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA non-toxic Boston fern profile does not list plant-specific clinical signs; this is not a guarantee against stomach upset."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Nephrolepis exaltata",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Feather Palm () (Nephrolepis exaltata).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Nephrolepis exaltata",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "phalaenopsis",
@@ -356,7 +940,37 @@
           "match_scope": "genus",
           "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/phalaenopsis-orchid"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Phalaenopsis sp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/phalaenopsis-orchid",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA non-toxic profile does not list plant-specific clinical signs; this is not a guarantee against stomach upset."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Phalaenopsis sp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Phalaenopsis Orchid (Moth Orchid, Moon Orchid) (Phalaenopsis sp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Phalaenopsis sp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "philodendron hederaceum",
@@ -385,7 +999,46 @@
           "match_scope": "related naming record",
           "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/cordatum"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Philodendron hederaceum",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth, tongue, or lip irritation and swelling",
+          "excessive drooling",
+          "vomiting",
+          "difficulty swallowing"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/heartleaf-philodendron",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Philodendron hederaceum",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Heartleaf Philodendron (Cordatum, Sweetheart Plant) (Philodendron hederaceum).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Philodendron hederaceum",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth, tongue, or lip irritation and swelling",
+            "excessive drooling",
+            "vomiting",
+            "difficulty swallowing"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/heartleaf-philodendron",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "saintpaulia",
@@ -412,7 +1065,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "section"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Saintpaulia spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/african-violet",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA non-toxic profile does not list plant-specific clinical signs; this is not a guarantee against stomach upset."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Streptocarpus sect. Saintpaulia",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+        "lookup_note": "ASPCA lists the updated taxon as a non-toxic plant for pets.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Streptocarpus sect. Saintpaulia",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "spathiphyllum",
@@ -432,7 +1115,47 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Spathiphyllum",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth and tongue irritation or burning",
+          "excessive drooling",
+          "vomiting",
+          "difficulty swallowing"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/peace-lily",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA peace lily profile reports oral irritation and difficulty swallowing."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Spathiphyllum spp.",
+        "match_scope": "genus_level",
+        "source_url": "https://www.aspca.org/news/these-houseplants-can-cause-trouble-your-pets",
+        "lookup_note": "ASPCA names Spathiphyllum spp. among oxalate-containing plants toxic to pets.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Spathiphyllum",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth and tongue irritation or burning",
+            "excessive drooling",
+            "vomiting",
+            "difficulty swallowing"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/peace-lily",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The ASPCA peace lily profile reports oral irritation and difficulty swallowing."
+        }
+      }
     },
     {
       "class_name": "alocasia",
@@ -451,7 +1174,48 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Alocasia spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth irritation and pain",
+          "swelling of mouth, tongue, or lips",
+          "drooling",
+          "vomiting",
+          "difficulty swallowing"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/alocasia",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Alocasia spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Alocasia (Elephant's Ear) (Alocasia spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Alocasia spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth irritation and pain",
+            "swelling of mouth, tongue, or lips",
+            "drooling",
+            "vomiting",
+            "difficulty swallowing"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/alocasia",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "amaryllis",
@@ -471,7 +1235,52 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Amaryllis spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "depression",
+          "diarrhea",
+          "abdominal pain",
+          "drooling",
+          "loss of appetite",
+          "tremors"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/amaryllis",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Amaryllis spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Naked Lady () (Amaryllis spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Amaryllis spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "depression",
+            "diarrhea",
+            "abdominal pain",
+            "drooling",
+            "loss of appetite",
+            "tremors"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/amaryllis",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "hippeastrum",
@@ -494,7 +1303,55 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Hippeastrum spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "drooling",
+          "diarrhea"
+        ],
+        "serious_effects": [
+          "convulsions",
+          "low blood pressure",
+          "tremors",
+          "heart rhythm abnormalities"
+        ],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/lily-palace",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Serious effects are reported for large ingestions; bulbs are the most poisonous part. Hippeastrum is distinct from true Amaryllis and true lilies."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Hippeastrum spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Fire Lily (Amaryllis, Barbados Lily, Lily of the Palace, Ridderstjerne) (Hippeastrum spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Hippeastrum spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "drooling",
+            "diarrhea"
+          ],
+          "serious_effects": [
+            "convulsions",
+            "low blood pressure",
+            "tremors",
+            "heart rhythm abnormalities"
+          ],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/lily-palace",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "Serious effects are reported for large ingestions; bulbs are the most poisonous part. Hippeastrum is distinct from true Amaryllis and true lilies."
+        }
+      }
     },
     {
       "class_name": "anthurium",
@@ -515,7 +1372,48 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Anthurium scherzeranum",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth irritation and pain",
+          "swelling of mouth, tongue, or lips",
+          "drooling",
+          "vomiting",
+          "difficulty swallowing"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/flamingo-flower",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Anthurium scherzeranum",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Flamingo Flower (Flamingo Lily, Tail Flower, Oilcloth Flower, Pigtail Plant, Painter's Pallet) (Anthurium scherzeranum).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Anthurium scherzeranum",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth irritation and pain",
+            "swelling of mouth, tongue, or lips",
+            "drooling",
+            "vomiting",
+            "difficulty swallowing"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/flamingo-flower",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "arrowhead vine",
@@ -535,7 +1433,48 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Syngonium podophyllum",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth irritation and pain",
+          "swelling of mouth, tongue, or lips",
+          "drooling",
+          "vomiting",
+          "difficulty swallowing"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/arrow-head-vine",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Syngonium podophyllum",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Green Gold Naphthysis (Nephthytis, Arrow-Head Vine) (Syngonium podophyllum).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Syngonium podophyllum",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth irritation and pain",
+            "swelling of mouth, tongue, or lips",
+            "drooling",
+            "vomiting",
+            "difficulty swallowing"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/arrow-head-vine",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "azalea",
@@ -554,7 +1493,57 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Rhododendron spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "diarrhea",
+          "drooling",
+          "weakness"
+        ],
+        "serious_effects": [
+          "low blood pressure",
+          "coma",
+          "cardiovascular collapse",
+          "death"
+        ],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/rhododendron",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Even a small number of leaves can cause serious effects."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Rhododendron spp",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Rhododendron (Rosebay, Azalea) (Rhododendron spp).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Rhododendron spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "diarrhea",
+            "drooling",
+            "weakness"
+          ],
+          "serious_effects": [
+            "low blood pressure",
+            "coma",
+            "cardiovascular collapse",
+            "death"
+          ],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/rhododendron",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "Even a small number of leaves can cause serious effects."
+        }
+      }
     },
     {
       "class_name": "bay laurel",
@@ -574,7 +1563,47 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Laurus nobilis",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "diarrhea"
+        ],
+        "serious_effects": [
+          "intestinal obstruction"
+        ],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/bay-laurel",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Obstruction is associated with large ingestion of whole leaves."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Laurus nobilis",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Bay Laurel (Sweet Bag, Bay Tree, Tree Laurel, Laurel Tree, Laurel) (Laurus nobilis).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Laurus nobilis",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "diarrhea"
+          ],
+          "serious_effects": [
+            "intestinal obstruction"
+          ],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/bay-laurel",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "Obstruction is associated with large ingestion of whole leaves."
+        }
+      }
     },
     {
       "class_name": "begonia",
@@ -591,7 +1620,43 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Begonia spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "drooling"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/begonia",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "ASPCA lists kidney failure for grazing animals; that outcome is not recorded here as a cat effect. Underground parts are most toxic."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Begonia spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Begonia (Over 1,000 species and 10,000 hybrids) (Begonia spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Begonia spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "drooling"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/begonia",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "ASPCA lists kidney failure for grazing animals; that outcome is not recorded here as a cat effect. Underground parts are most toxic."
+        }
+      }
     },
     {
       "class_name": "caladium",
@@ -610,7 +1675,48 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Caladium hortulanum",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth irritation and pain",
+          "swelling of mouth, tongue, or lips",
+          "drooling",
+          "vomiting",
+          "difficulty swallowing"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/caladium",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Caladium hortulanum",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Caladium (Malanga, Elephant's Ears, Stoplight, Seagull, Mother-in-law Plant, Pink Cloud, Texas Wonder, Angel-Wings, Exposition, Candidum, Fancy-leaved Caladium) (Caladium hortulanum).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Caladium hortulanum",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth irritation and pain",
+            "swelling of mouth, tongue, or lips",
+            "drooling",
+            "vomiting",
+            "difficulty swallowing"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/caladium",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "calla lily",
@@ -630,7 +1736,49 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Zantedeschia aethiopica",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth irritation and pain",
+          "swelling of mouth, tongue, or lips",
+          "drooling",
+          "vomiting",
+          "difficulty swallowing"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/garden-calla",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Calla lily is an aroid; this profile does not establish the renal toxicity of true lilies (Lilium)."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Zantedeschia aethiopica",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Calla Lily (Calla Lily, Pig Lily, White Arum, Trumpet Lily, Florist's Calla, Garden Calla, Arum Lily) (Zantedeschia aethiopica).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Zantedeschia aethiopica",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth irritation and pain",
+            "swelling of mouth, tongue, or lips",
+            "drooling",
+            "vomiting",
+            "difficulty swallowing"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/garden-calla",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "Calla lily is an aroid; this profile does not establish the renal toxicity of true lilies (Lilium)."
+        }
+      }
     },
     {
       "class_name": "carnation",
@@ -650,7 +1798,42 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Dianthus caryophyllus",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mild gastrointestinal upset",
+          "mild skin irritation"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/carnation",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Dianthus caryophyllus",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Carnation (Pinks, Wild Carnation, Sweet William) (Dianthus caryophyllus).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Dianthus caryophyllus",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mild gastrointestinal upset",
+            "mild skin irritation"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/carnation",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "castor bean",
@@ -669,7 +1852,57 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Ricinus communis",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth irritation and burning",
+          "thirst",
+          "vomiting",
+          "diarrhea"
+        ],
+        "serious_effects": [
+          "kidney failure",
+          "convulsions",
+          "coma",
+          "death"
+        ],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/castor-bean-plant",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The seeds are especially toxic; severe outcomes are associated with substantial exposure."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Ricinus communis",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Castor Bean Plant (Castor Oil Plant, Mole Bean Plant, African Wonder Tree, Castor Bean) (Ricinus communis).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Ricinus communis",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth irritation and burning",
+            "thirst",
+            "vomiting",
+            "diarrhea"
+          ],
+          "serious_effects": [
+            "kidney failure",
+            "convulsions",
+            "coma",
+            "death"
+          ],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/castor-bean-plant",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The seeds are especially toxic; severe outcomes are associated with substantial exposure."
+        }
+      }
     },
     {
       "class_name": "catnip",
@@ -688,7 +1921,40 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Nepeta cataria",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "diarrhea",
+          "sedation or stimulation"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/catnip",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "unknown",
+        "potential_hazard": true,
+        "source_taxon": "Nepeta cataria",
+        "match_scope": "unverified",
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/catnip",
+        "lookup_note": "The ASPCA profile lists toxicity to cats but does not establish dog status.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Nepeta cataria",
+          "match_scope": "unverified",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/catnip",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked source does not establish dog-specific effects for this exact database taxon."
+        }
+      }
     },
     {
       "class_name": "clivia lily",
@@ -707,7 +1973,55 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Clivia spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "drooling",
+          "diarrhea"
+        ],
+        "serious_effects": [
+          "convulsions",
+          "low blood pressure",
+          "tremors",
+          "heart rhythm abnormalities"
+        ],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/clivia-lily",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Serious effects are reported for large ingestions; bulbs are most poisonous."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Clivia spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Clivia Lily (Kaffir Lily, Clivies, Caffre Lily, Cape Clivia, Klivia) (Clivia spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Clivia spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "drooling",
+            "diarrhea"
+          ],
+          "serious_effects": [
+            "convulsions",
+            "low blood pressure",
+            "tremors",
+            "heart rhythm abnormalities"
+          ],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/clivia-lily",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "Serious effects are reported for large ingestions; bulbs are most poisonous."
+        }
+      }
     },
     {
       "class_name": "corn plant",
@@ -727,7 +2041,47 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Dracaena fragrans",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting, sometimes bloody",
+          "depression",
+          "loss of appetite",
+          "excessive drooling",
+          "dilated pupils in cats"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/corn-plant",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Dracaena fragrans",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Corn Plant (Corn Plant, Cornstalk Plant, Dracaena, Dragon Tree, Ribbon Plant) (Dracaena fragrans).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Dracaena fragrans",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting, sometimes bloody",
+            "depression",
+            "loss of appetite",
+            "excessive drooling"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/corn-plant",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "dracaena marginata",
@@ -747,7 +2101,52 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Dracaena marginata",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "depression",
+          "loss of appetite",
+          "poor coordination",
+          "weakness",
+          "dilated pupils in cats",
+          "abdominal pain in cats",
+          "increased heart rate in cats",
+          "drooling in cats"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/straight-margined-dracaena",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Dracaena marginata",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Madagascar Dragon Tree () (Dracaena marginata).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Dracaena marginata",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "depression",
+            "loss of appetite",
+            "poor coordination",
+            "weakness"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/straight-margined-dracaena",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "english ivy",
@@ -767,7 +2166,47 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Hedera helix",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "abdominal pain",
+          "drooling",
+          "diarrhea"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/english-ivy",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Foliage is more toxic than berries."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Hedera helix",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Branching Ivy (English Ivy, Glacier Ivy, Needlepoint Ivy, Sweetheart Ivy, California Ivy) (Hedera helix).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Hedera helix",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "abdominal pain",
+            "drooling",
+            "diarrhea"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/english-ivy",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "Foliage is more toxic than berries."
+        }
+      }
     },
     {
       "class_name": "eucalyptus",
@@ -784,7 +2223,48 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Eucalyptus spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "drooling",
+          "vomiting",
+          "diarrhea",
+          "depression",
+          "weakness"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/eucalyptus",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Eucalyptus species",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Eucalyptus (Many cultivars) (Eucalyptus species).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Eucalyptus spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "drooling",
+            "vomiting",
+            "diarrhea",
+            "depression",
+            "weakness"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/eucalyptus",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "foxglove",
@@ -801,7 +2281,52 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Digitalis purpurea",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "diarrhea",
+          "weakness"
+        ],
+        "serious_effects": [
+          "heart rhythm abnormalities",
+          "heart failure",
+          "death"
+        ],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/foxglove",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Digitalis purpurea",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Foxglove () (Digitalis purpurea).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Digitalis purpurea",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "diarrhea",
+            "weakness"
+          ],
+          "serious_effects": [
+            "heart rhythm abnormalities",
+            "heart failure",
+            "death"
+          ],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/foxglove",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "gardenia",
@@ -820,7 +2345,42 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Gardenia jasminoides",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mild vomiting or diarrhea",
+          "hives"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/gardenia",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Gardenia jasminoides",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Cape Jasmine (Gardenia) (Gardenia jasminoides).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Gardenia jasminoides",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mild vomiting or diarrhea",
+            "hives"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/gardenia",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "geranium",
@@ -839,7 +2399,46 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Pelargonium spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "loss of appetite",
+          "depression",
+          "skin irritation"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/geranium",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Pelargonium species",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Geranium (Many cultivars) (Pelargonium species).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Pelargonium spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "loss of appetite",
+            "depression",
+            "skin irritation"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/geranium",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "gladiolus",
@@ -858,7 +2457,47 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Gladiolus spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "drooling",
+          "vomiting",
+          "lethargy",
+          "diarrhea"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/gladiola",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The corms have the highest toxin concentration."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Gladiolus species",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Gladiola (Many cultivars) (Gladiolus species).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Gladiolus spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "drooling",
+            "vomiting",
+            "lethargy",
+            "diarrhea"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/gladiola",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The corms have the highest toxin concentration."
+        }
+      }
     },
     {
       "class_name": "holly",
@@ -868,7 +2507,7 @@
         "english holly"
       ],
       "taxonomic_scope": "Curated plant lookup entry for Ilex spp..",
-      "toxicity_status": "toxic",
+      "toxicity_status": "unknown",
       "potential_hazard": true,
       "evidence": [
         {
@@ -878,7 +2517,46 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Ilex opaca",
+        "match_scope": "narrower_taxon",
+        "reported_signs": [
+          "vomiting",
+          "diarrhea",
+          "depression"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/holly",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA profile names Ilex opaca; these signs are not established for every Ilex species."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "unknown",
+        "potential_hazard": true,
+        "source_taxon": "Ilex opaca",
+        "match_scope": "narrower_taxon",
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/holly",
+        "lookup_note": "ASPCA lists Ilex opaca as toxic to dogs; this class covers Ilex spp.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Ilex opaca",
+          "match_scope": "narrower_taxon",
+          "reported_signs": [
+            "vomiting",
+            "diarrhea",
+            "depression"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/holly",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "These signs are reported for Ilex opaca only; the database class covers a wider genus."
+        }
+      },
+      "review_note": "The cited ASPCA entry names a narrower or different taxon; no class-wide cat status is inferred."
     },
     {
       "class_name": "hyacinth",
@@ -897,7 +2575,46 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Hyacinthus orientalis",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "intense vomiting",
+          "diarrhea, sometimes bloody",
+          "depression",
+          "tremors"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/hyacinth",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Hyacinthus orientalis",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Garden Hyacinth (Hyacinth) (Hyacinthus orientalis).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Hyacinthus orientalis",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "intense vomiting",
+            "diarrhea, sometimes bloody",
+            "depression",
+            "tremors"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/hyacinth",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "hydrangea",
@@ -916,7 +2633,45 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Hydrangea arborescens",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "depression",
+          "diarrhea"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/hydrangea",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA notes that cyanide intoxication is rare and gastrointestinal signs predominate."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Hydrangea arborescens",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Hills of Snow (Hydrangea, Hortensia, Seven Bark) (Hydrangea arborescens).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Hydrangea arborescens",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "depression",
+            "diarrhea"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/hydrangea",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The ASPCA notes that cyanide intoxication is rare and gastrointestinal signs predominate."
+        }
+      }
     },
     {
       "class_name": "kalanchoe",
@@ -936,7 +2691,47 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Kalanchoe spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "diarrhea"
+        ],
+        "serious_effects": [
+          "heart rhythm abnormalities"
+        ],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/kalanchoe",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Heart rhythm abnormalities are reported as rare."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Kalanchoe spp",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Kalanchoe (Mother-In-Law-Plant, Devils Backbone, Chandelier Plant, Mother of Millions) (Kalanchoe spp).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Kalanchoe spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "diarrhea"
+          ],
+          "serious_effects": [
+            "heart rhythm abnormalities"
+          ],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/kalanchoe",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "Heart rhythm abnormalities are reported as rare."
+        }
+      }
     },
     {
       "class_name": "lily",
@@ -958,7 +2753,45 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Lilium spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "drooling",
+          "loss of appetite",
+          "lethargy",
+          "vomiting"
+        ],
+        "serious_effects": [
+          "kidney failure",
+          "death"
+        ],
+        "source_url": "https://www.merckvetmanual.com/toxicology/poisonous-plants/houseplants-and-ornamentals-toxic-to-animals",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "True lilies (Lilium) can cause acute kidney failure in cats; even small exposures warrant urgent veterinary advice."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Lilium species",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/lily",
+        "lookup_note": "ASPCA lists this true lily as non-toxic to dogs but highly toxic to cats. Non-toxic is not symptom-free.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Lilium species",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/lily",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "nandina",
@@ -978,7 +2811,53 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Nandina domestica",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "weakness",
+          "poor coordination"
+        ],
+        "serious_effects": [
+          "seizures",
+          "coma",
+          "respiratory failure",
+          "death"
+        ],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/heavenly-bamboo",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "ASPCA describes severe outcomes as rare in pets."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Nandina domestica",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Heavenly Bamboo (Sacred Bamboo, Nandina) (Nandina domestica).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Nandina domestica",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "weakness",
+            "poor coordination"
+          ],
+          "serious_effects": [
+            "seizures",
+            "coma",
+            "respiratory failure",
+            "death"
+          ],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/heavenly-bamboo",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "ASPCA describes severe outcomes as rare in pets."
+        }
+      }
     },
     {
       "class_name": "oxalis",
@@ -998,7 +2877,47 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Oxalis spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "drooling",
+          "tremors"
+        ],
+        "serious_effects": [
+          "kidney failure"
+        ],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/shamrock-plant",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Kidney failure is reported as rare in dogs and cats."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Oxalis spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Good Luck Plant (Shamrock Plant, Sorrel) (Oxalis spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Oxalis spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "drooling",
+            "tremors"
+          ],
+          "serious_effects": [
+            "kidney failure"
+          ],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/shamrock-plant",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "Kidney failure is reported as rare in dogs and cats."
+        }
+      }
     },
     {
       "class_name": "pencil cactus",
@@ -1018,7 +2937,43 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Euphorbia tirucalli",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth and stomach irritation",
+          "vomiting"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/pencil-cactus",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA describes the toxicity as generally overrated; irritation may occur."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Euphorbia tirucalli",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Pencil Cactus (Sticks of Fire) (Euphorbia tirucalli).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Euphorbia tirucalli",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth and stomach irritation",
+            "vomiting"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/pencil-cactus",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The ASPCA describes the toxicity as generally overrated; irritation may occur."
+        }
+      }
     },
     {
       "class_name": "sago palm",
@@ -1038,7 +2993,57 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Cycas revoluta and Zamia spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "black or tarry stools",
+          "jaundice",
+          "thirst",
+          "bruising",
+          "bleeding problems"
+        ],
+        "serious_effects": [
+          "liver failure",
+          "death"
+        ],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/sago-palm",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA profile includes Cycas revoluta and Zamia species. All parts are toxic; seeds contain the highest toxin concentration."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Cycas revoluta",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/sago-palm",
+        "lookup_note": "ASPCA explicitly lists Cycas revoluta as toxic to dogs.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Cycas revoluta and Zamia spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "black or tarry stools",
+            "jaundice",
+            "thirst",
+            "bruising",
+            "bleeding problems"
+          ],
+          "serious_effects": [
+            "liver failure",
+            "death"
+          ],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/sago-palm",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The ASPCA profile includes Cycas revoluta and Zamia species. All parts are toxic; seeds contain the highest toxin concentration."
+        }
+      }
     },
     {
       "class_name": "snake plant",
@@ -1058,7 +3063,44 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Sansevieria trifasciata",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "nausea",
+          "vomiting",
+          "diarrhea"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/snake-plant",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Sansevieria trifasciata",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Golden Birds Nest (Snake Plant, Mother-in-Law’s Tongue, Good Luck Plant) (Sansevieria trifasciata).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Sansevieria trifasciata",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "nausea",
+            "vomiting",
+            "diarrhea"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/snake-plant",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "tulip",
@@ -1075,7 +3117,47 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Tulipa spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting",
+          "depression",
+          "diarrhea",
+          "excessive drooling"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/tulip",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Bulbs have the highest toxin concentration."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Tulipa spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Tulip () (Tulipa spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Tulipa spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting",
+            "depression",
+            "diarrhea",
+            "excessive drooling"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/tulip",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "Bulbs have the highest toxin concentration."
+        }
+      }
     },
     {
       "class_name": "wisteria",
@@ -1092,7 +3174,44 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Wisteria spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting, sometimes bloody",
+          "diarrhea",
+          "depression"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/wisteria",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Wisteria spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Wisteria () (Wisteria spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Wisteria spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting, sometimes bloody",
+            "diarrhea",
+            "depression"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/wisteria",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "yucca",
@@ -1109,7 +3228,41 @@
           "evidence_status": "toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Yucca spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "vomiting in cats"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/yucca",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The source also lists horse-specific effects; only the cat-relevant vomiting is recorded here."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Yucca spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Yucca () (Yucca spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Yucca spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "vomiting"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/yucca",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The source also lists horse-specific effects; only the cat-relevant vomiting is recorded here."
+        }
+      }
     },
     {
       "class_name": "asparagus fern",
@@ -1129,7 +3282,47 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Asparagus densiflorus",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "allergic skin irritation after repeated contact",
+          "vomiting after berry ingestion",
+          "abdominal pain after berry ingestion",
+          "diarrhea after berry ingestion"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/emerald-feather",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Skin signs follow repeated exposure; gastrointestinal signs follow berry ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Asparagus densiflorus",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Emerald Feather (Emerald Fern, Asparagus, Asparagus fern, Sprengeri fern, Plumosa fern, Lace fern, Racemose asparagus, Shatavari) (Asparagus densiflorus).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Asparagus densiflorus",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "allergic skin irritation after repeated contact",
+            "vomiting after berry ingestion",
+            "abdominal pain after berry ingestion",
+            "diarrhea after berry ingestion"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/emerald-feather",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "Skin signs follow repeated exposure; gastrointestinal signs follow berry ingestion."
+        }
+      }
     },
     {
       "class_name": "bird of paradise flower",
@@ -1148,7 +3341,45 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Strelitzia reginae",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mild nausea",
+          "vomiting",
+          "drowsiness"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/bird-paradise-flower",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Signs are mainly associated with fruit or seeds; this is Strelitzia reginae, not other plants called bird of paradise."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Strelitzia reginae",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Bird of Paradise Flower (Crane Flower, Bird's Tongue Flower) (Strelitzia reginae).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Strelitzia reginae",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mild nausea",
+            "vomiting",
+            "drowsiness"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/bird-paradise-flower",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "Signs are mainly associated with fruit or seeds; this is Strelitzia reginae, not other plants called bird of paradise."
+        }
+      }
     },
     {
       "class_name": "christmas rose",
@@ -1168,7 +3399,48 @@
           "evidence_status": "toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Helleborus niger",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "drooling",
+          "abdominal pain",
+          "diarrhea",
+          "colic",
+          "depression"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/christmas-rose",
+        "reviewed_date": "2026-10-29"
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Helleborus niger",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Christmas Rose (Hellebore, Lenten Rose, Easter Rose) (Helleborus niger).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Helleborus niger",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "drooling",
+            "abdominal pain",
+            "diarrhea",
+            "colic",
+            "depression"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/christmas-rose",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked profile lists these signs for dogs and cats."
+        }
+      }
     },
     {
       "class_name": "areca palm",
@@ -1188,7 +3460,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Dypsis lutescens",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Dypsis lutescens",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Areca Palm (Golden Butterfly Palm, Cane Palm, Golden Feather Palm, Yellow Palm) (Dypsis lutescens).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Dypsis lutescens",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "aluminum plant",
@@ -1207,7 +3509,38 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Pilea cadierei",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Pilea cadieri",
+        "match_scope": "spelling_variant",
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/aluminum-plant",
+        "lookup_note": "The ASPCA profile spells the epithet cadieri; the database uses cadierei.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Pilea cadieri",
+          "match_scope": "spelling_variant",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/aluminum-plant",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The ASPCA spells this aluminum-plant epithet cadieri; Kew accepts Pilea cadierei. No dog-specific signs are listed.",
+          "taxonomy_source_url": "https://powo.science.kew.org/taxon/urn%3Alsid%3Aipni.org%3Anames%3A855275-1"
+        }
+      }
     },
     {
       "class_name": "artillery plant",
@@ -1224,7 +3557,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Pilea microphylla",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Pilea microphylla",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Artillery Plant () (Pilea microphylla).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Pilea microphylla",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "polka dot plant",
@@ -1244,7 +3607,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Hypoestes phyllostachya",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Hypoestes phyllostachya",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Baby’s Tears (Polka Dot Plant, Measles Plant, Flamingo Plant, Freckle Face, Pink Splash) (Hypoestes phyllostachya).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Hypoestes phyllostachya",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "ball fern",
@@ -1263,7 +3656,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Davallia spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Davallia spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Ball Fern (Rabbit's Foot Fern, Squirrel Foot Fern, Deer Foot Fern, Hare Fern) (Davallia spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Davallia spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "baby rubber plant",
@@ -1283,7 +3706,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Peperomia obtusifolia",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Peperomia obtusifolia",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: American Rubber Plant (Pepper Face, Baby Rubber Plant) (Peperomia obtusifolia).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Peperomia obtusifolia",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "basil",
@@ -1302,7 +3755,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Ocimum basilicum",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Ocimum basilicum",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Basil (Saint Joseph's Wort, Thai Basil, Sweet Basil) (Ocimum basilicum).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Ocimum basilicum",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "burros tail",
@@ -1322,7 +3805,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Sedum morganianum",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Sedum morganianum",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Burro's Tail (Horse's Tail, Donkey's Tail, Lamb's Tail) (Sedum morganianum).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Sedum morganianum",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "calathea",
@@ -1342,7 +3855,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Calathea spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Calathea spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Calathea () (Calathea spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Calathea spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "camellia",
@@ -1361,7 +3904,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Camellia japonica",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Camellia japonica",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Camellia (Common Camellia, Peony Camellia) (Camellia japonica).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Camellia japonica",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "cast iron plant",
@@ -1380,7 +3953,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Aspidistra elatior",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Aspidistra elatior",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Cast Iron Plant (Bar Room Plant, Iron Plant, Variegated Cast Iron Plant) (Aspidistra elatior).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Aspidistra elatior",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "christmas cactus",
@@ -1399,7 +4002,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Schlumbergera bridgesii",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/christmas-cactus",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA profile lists this taxon as non-toxic but provides no plant-specific signs. Other Christmas-cactus sources may describe a different Schlumbergera species."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Schlumbergera bridgesii",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Christmas Cactus (Easter Cactus) (Schlumbergera bridgesii).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Schlumbergera bridgesii",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "creeping charlie",
@@ -1418,7 +4051,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Pilea nummulariifolia",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Pilea nummulariifolia",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Creeping Charlie (Swedish Ivy (Plectranthus)) (Pilea nummulariifolia).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Pilea nummulariifolia",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "crepe myrtle",
@@ -1437,7 +4100,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Lagerstroemia indica",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Lagerstroemia indica",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Crape Myrtle (Crepe Myrtle) (Lagerstroemia indica).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Lagerstroemia indica",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "friendship plant",
@@ -1456,7 +4149,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Pilea involucrata",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Pilea involucrata",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Friendship Plant () (Pilea involucrata).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Pilea involucrata",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "freesia",
@@ -1473,7 +4196,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Freesia spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The cited ASPCA plant-safety explainer supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Freesia spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+        "lookup_note": "ASPCA lists Freesia spp. as a non-toxic flower for pets.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Freesia spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "hens and chicks",
@@ -1492,7 +4245,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Echeveria elegans",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Echeveria elegans",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Chickens and Hens (Hens and Chickens, Mother Hens and Chicks) (Echeveria elegans).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Echeveria elegans",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "hibiscus",
@@ -1512,7 +4295,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Hibiscus syriacus",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Hibiscus syriacus",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Hibiscus (Rose of Sharon, Rose of China) (Hibiscus syriacus).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Hibiscus syriacus",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "hoya",
@@ -1532,7 +4345,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Hoya carnosa",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Hoya carnosa",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Honey Plant (Wax Plant) (Hoya carnosa).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Hoya carnosa",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "impatiens",
@@ -1552,7 +4395,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Impatiens spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Impatiens spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Buzzy Lizzie (Giant Touch-Me-Not, Impatience Plant, Patient Lucy, Patient Plant, Tangerine Impatience) (Impatiens spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Impatiens spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "jasmine",
@@ -1569,7 +4442,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Jasminum spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Jasminum species",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Jasmine () (Jasminum species).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Jasminum species",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "kentia palm",
@@ -1588,7 +4491,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Howea forsteriana",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Howea forsteriana",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Forster Sentry Palm (Kentia palm) (Howea forsteriana).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Howea forsteriana",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "money tree",
@@ -1607,7 +4540,45 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Pachira aquatica",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "nausea",
+          "vomiting",
+          "loose stool"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/money-tree",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "ASPCA lists this plant as non-toxic while also listing these possible gastrointestinal signs."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Pachira aquatica",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Money Tree (Money Plant) (Pachira aquatica).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Pachira aquatica",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "nausea",
+            "vomiting",
+            "loose stool"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/money-tree",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "ASPCA lists this plant as non-toxic to dogs while also listing these possible gastrointestinal signs."
+        }
+      }
     },
     {
       "class_name": "norfolk island pine",
@@ -1627,7 +4598,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Araucaria heterophylla",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Araucaria heterophylla",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Australian Pine (Norfolk Pine, House Pine, Norfolk Island Pine) (Araucaria heterophylla).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Araucaria heterophylla",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "orchid",
@@ -1646,7 +4647,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "family"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Orchidaceae",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The cited ASPCA plant-safety explainer supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Orchidaceae",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+        "lookup_note": "ASPCA lists Orchidaceae as non-toxic for pets; individual identification still matters.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Orchidaceae",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "petunia",
@@ -1663,7 +4694,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Petunia spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The cited ASPCA plant-safety explainer supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Petunia species",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Petunia () (Petunia species).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Petunia species",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "pony tail palm",
@@ -1683,7 +4744,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Beaucarnea recurvata",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Beaucarnea recurvata",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Bottle Palm (Elephant-foot Tree, Pony Tail Plant) (Beaucarnea recurvata).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Beaucarnea recurvata",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "rose",
@@ -1700,7 +4791,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Rosa spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Rosa Species",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Rose () (Rosa Species).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Rosa Species",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "rosemary",
@@ -1719,7 +4840,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Salvia rosmarinus",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Rosmarinus officinalis",
+        "match_scope": "accepted_synonym",
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/rosemary",
+        "lookup_note": "The ASPCA profile uses Rosmarinus officinalis, a synonym of Salvia rosmarinus.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Rosmarinus officinalis",
+          "match_scope": "accepted_synonym",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/rosemary",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "sage",
@@ -1738,7 +4889,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Salvia officinalis",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Salvia officinalis",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Sage (Common Sage, Garden Sage) (Salvia officinalis).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Salvia officinalis",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "snapdragon",
@@ -1757,7 +4938,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Antirrhinum majus",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Antirrhinum majus",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Common Snapdragon (Garden Snapdragon) (Antirrhinum majus).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Antirrhinum majus",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "sunflower",
@@ -1774,7 +4985,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Helianthus annuus",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The cited ASPCA plant-safety explainer supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Helianthus spp.",
+        "match_scope": "genus_level",
+        "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+        "lookup_note": "ASPCA lists Helianthus spp. as non-toxic flowers for pets.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Helianthus spp.",
+          "match_scope": "genus_level",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "zinnia",
@@ -1791,7 +5032,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Zinnia elegans",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The cited ASPCA plant-safety explainer supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Zinnia elegans",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+        "lookup_note": "ASPCA lists Zinnia elegans as a non-toxic flower for pets.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Zinnia elegans",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/news/do-you-know-which-flowers-and-plants-are-toxic-pets-our-experts-explain",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "cape primrose",
@@ -1810,7 +5081,37 @@
           "evidence_status": "non_toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Streptocarpus spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Streptocarpus spp.",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Cape Primrose (Twisted Fruit, Bavarian Belle) (Streptocarpus spp.).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Streptocarpus spp.",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "goldfish plant",
@@ -1819,8 +5120,8 @@
         "candy corn plant"
       ],
       "taxonomic_scope": "Curated plant lookup entry for Nematanthus spp..",
-      "toxicity_status": "non_toxic",
-      "potential_hazard": false,
+      "toxicity_status": "unknown",
+      "potential_hazard": null,
       "evidence": [
         {
           "source_id": "aspca_cat_list",
@@ -1829,7 +5130,38 @@
           "evidence_status": "non_toxic",
           "match_scope": "genus"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Nematanthus spp.",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "unknown",
+        "potential_hazard": false,
+        "source_taxon": "Hypocyrta nummularia",
+        "match_scope": "narrower_taxon",
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/nematanthus-spp",
+        "lookup_note": "ASPCA lists a single Hypocyrta/Nematanthus species as non-toxic; this class covers Nematanthus spp.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Hypocyrta nummularia",
+          "match_scope": "narrower_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/nematanthus-spp",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      },
+      "review_note": "The cited ASPCA entry names a narrower or different taxon; no class-wide cat status is inferred."
     },
     {
       "class_name": "nerve plant",
@@ -1838,8 +5170,8 @@
         "fittonia"
       ],
       "taxonomic_scope": "Curated plant lookup entry for Fittonia albivenis.",
-      "toxicity_status": "non_toxic",
-      "potential_hazard": false,
+      "toxicity_status": "unknown",
+      "potential_hazard": null,
       "evidence": [
         {
           "source_id": "aspca_cat_list",
@@ -1848,7 +5180,38 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Fittonia albivenis",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "unknown",
+        "potential_hazard": false,
+        "source_taxon": "Fittonia verschaffeltii",
+        "match_scope": "unverified",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA lists Fittonia verschaffeltii as non-toxic; an exact match to the database taxon Fittonia albivenis was not verified.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Fittonia verschaffeltii",
+          "match_scope": "unverified",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked source does not establish dog-specific effects for this exact database taxon."
+        }
+      },
+      "review_note": "The cited ASPCA entry names a narrower or different taxon; no class-wide cat status is inferred."
     },
     {
       "class_name": "purple waffle plant",
@@ -1857,8 +5220,8 @@
         "waffle plant"
       ],
       "taxonomic_scope": "Curated plant lookup entry for Hemigraphis alternata.",
-      "toxicity_status": "non_toxic",
-      "potential_hazard": false,
+      "toxicity_status": "unknown",
+      "potential_hazard": null,
       "evidence": [
         {
           "source_id": "aspca_cat_list",
@@ -1867,7 +5230,38 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Hemigraphis alternata",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "unknown",
+        "potential_hazard": false,
+        "source_taxon": "Hemigraphis exotica",
+        "match_scope": "unverified",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA lists Hemigraphis exotica as non-toxic; an exact match to Hemigraphis alternata was not verified.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Hemigraphis exotica",
+          "match_scope": "unverified",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The linked source does not establish dog-specific effects for this exact database taxon."
+        }
+      },
+      "review_note": "The cited ASPCA entry names a narrower or different taxon; no class-wide cat status is inferred."
     },
     {
       "class_name": "rubber plant",
@@ -1876,10 +5270,60 @@
         "rubber tree"
       ],
       "taxonomic_scope": "Curated plant lookup entry for Ficus elastica.",
-      "toxicity_status": "unknown",
-      "potential_hazard": null,
-      "evidence": [],
-      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "pet_poison_rubber",
+          "source_match": "Ficus elastica; toxic to cats",
+          "evidence_taxon": "Ficus elastica",
+          "evidence_status": "toxic",
+          "match_scope": "exact taxon"
+        }
+      ],
+      "review_note": "Cat status uses the linked exact taxon source. Verify the photographed plant identity before using this reference.",
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Ficus elastica",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth irritation",
+          "drooling",
+          "retching",
+          "vomiting",
+          "minor gastrointestinal distress"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.petpoisonhelpline.com/poison/rubber-tree-plant/",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Pet Poison Helpline names Ficus elastica specifically. The database toxicity classification remains unknown pending its separate status review; do not confuse this with non-toxic Peperomia obtusifolia, also called rubber plant."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Ficus elastica",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.petpoisonhelpline.com/poison/rubber-tree-plant/",
+        "lookup_note": "Pet Poison Helpline names Ficus elastica; do not confuse it with Peperomia obtusifolia.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Ficus elastica",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth irritation",
+            "drooling",
+            "retching",
+            "vomiting",
+            "minor gastrointestinal distress"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.petpoisonhelpline.com/poison/rubber-tree-plant/",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "Pet Poison Helpline names Ficus elastica specifically. The database toxicity classification remains unknown pending its separate status review; do not confuse this with non-toxic Peperomia obtusifolia, also called rubber plant."
+        }
+      }
     },
     {
       "class_name": "zz plant",
@@ -1888,10 +5332,68 @@
         "zanzibar gem"
       ],
       "taxonomic_scope": "Curated plant lookup entry for Zamioculcas zamiifolia.",
-      "toxicity_status": "unknown",
-      "potential_hazard": null,
-      "evidence": [],
-      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_houseplants_2025",
+          "source_match": "Zamioculcas spp.; toxic to cats",
+          "evidence_taxon": "Zamioculcas spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus-level ASPCA discussion"
+        }
+      ],
+      "review_note": "Cat status uses the linked genus-level ASPCA discussion source. Verify the photographed plant identity before using this reference.",
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Zamioculcas spp.",
+        "match_scope": "genus_level",
+        "reported_signs": [
+          "mouth irritation and pain",
+          "drooling",
+          "retching",
+          "nausea",
+          "loss of appetite",
+          "vomiting",
+          "diarrhea"
+        ],
+        "serious_effects": [
+          "throat swelling with breathing difficulty"
+        ],
+        "source_url": "https://www.aspca.org/news/these-houseplants-can-cause-trouble-your-pets",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "ASPCA discusses the genus among insoluble-calcium-oxalate plants; throat swelling is rare with large exposures. The article does not establish a species-specific toxicity classification."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Zamioculcas spp.",
+        "match_scope": "genus_level",
+        "source_url": "https://www.aspca.org/news/these-houseplants-can-cause-trouble-your-pets",
+        "lookup_note": "ASPCA names Zamioculcas spp. among oxalate-containing plants toxic to pets.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Zamioculcas spp.",
+          "match_scope": "genus_level",
+          "reported_signs": [
+            "mouth irritation and pain",
+            "drooling",
+            "retching",
+            "nausea",
+            "loss of appetite",
+            "vomiting",
+            "diarrhea"
+          ],
+          "serious_effects": [
+            "throat swelling with breathing difficulty"
+          ],
+          "source_url": "https://www.aspca.org/news/these-houseplants-can-cause-trouble-your-pets",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "ASPCA discusses the genus among insoluble-calcium-oxalate plants; throat swelling is rare with large exposures. The article does not establish a species-specific toxicity classification."
+        }
+      }
     },
     {
       "class_name": "pilea peperomioides",
@@ -1901,10 +5403,48 @@
         "pancake plant"
       ],
       "taxonomic_scope": "Curated plant lookup entry for Pilea peperomioides.",
-      "toxicity_status": "unknown",
-      "potential_hazard": null,
-      "evidence": [],
-      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+      "toxicity_status": "non_toxic",
+      "potential_hazard": false,
+      "evidence": [
+        {
+          "source_id": "aspca_succulent_article",
+          "source_match": "Pilea peperomioides; non-toxic to cats",
+          "evidence_taxon": "Pilea peperomioides",
+          "evidence_status": "non_toxic",
+          "match_scope": "exact taxon; ASPCA misspells the epithet"
+        }
+      ],
+      "review_note": "Cat status uses the linked exact taxon; ASPCA misspells the epithet source. Verify the photographed plant identity before using this reference.",
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Pilea peperomioides",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/news/are-succulents-safe-have-around-pets",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "ASPCA lists Chinese money plant as non-toxic in this article, but provides no plant-specific clinical signs. Its name is misspelled peperomiodes in the article."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Pilea peperomioides",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/news/are-succulents-safe-have-around-pets",
+        "lookup_note": "ASPCA lists Chinese money plant among non-toxic succulents for pets; its scientific name is misspelled in the article.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Pilea peperomioides",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/news/are-succulents-safe-have-around-pets",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     },
     {
       "class_name": "monstera adansonii",
@@ -1913,10 +5453,68 @@
         "swiss cheese vine"
       ],
       "taxonomic_scope": "Curated plant lookup entry for Monstera adansonii.",
-      "toxicity_status": "unknown",
-      "potential_hazard": null,
-      "evidence": [],
-      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_houseplants_2025",
+          "source_match": "Monstera spp.; toxic to cats",
+          "evidence_taxon": "Monstera spp.",
+          "evidence_status": "toxic",
+          "match_scope": "genus-level ASPCA discussion"
+        }
+      ],
+      "review_note": "Cat status uses the linked genus-level ASPCA discussion source. Verify the photographed plant identity before using this reference.",
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Monstera spp.",
+        "match_scope": "genus_level",
+        "reported_signs": [
+          "mouth irritation and pain",
+          "drooling",
+          "retching",
+          "nausea",
+          "loss of appetite",
+          "vomiting",
+          "diarrhea"
+        ],
+        "serious_effects": [
+          "throat swelling with breathing difficulty"
+        ],
+        "source_url": "https://www.aspca.org/news/these-houseplants-can-cause-trouble-your-pets",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "ASPCA discusses the genus among insoluble-calcium-oxalate plants; throat swelling is rare with large exposures. The article does not establish a species-specific toxicity classification."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Monstera spp.",
+        "match_scope": "genus_level",
+        "source_url": "https://www.aspca.org/news/these-houseplants-can-cause-trouble-your-pets",
+        "lookup_note": "ASPCA names Monstera spp. among oxalate-containing plants toxic to pets.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Monstera spp.",
+          "match_scope": "genus_level",
+          "reported_signs": [
+            "mouth irritation and pain",
+            "drooling",
+            "retching",
+            "nausea",
+            "loss of appetite",
+            "vomiting",
+            "diarrhea"
+          ],
+          "serious_effects": [
+            "throat swelling with breathing difficulty"
+          ],
+          "source_url": "https://www.aspca.org/news/these-houseplants-can-cause-trouble-your-pets",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "ASPCA discusses the genus among insoluble-calcium-oxalate plants; throat swelling is rare with large exposures. The article does not establish a species-specific toxicity classification."
+        }
+      }
     },
     {
       "class_name": "croton",
@@ -1925,10 +5523,60 @@
         "garden croton"
       ],
       "taxonomic_scope": "Curated plant lookup entry for Codiaeum variegatum.",
-      "toxicity_status": "unknown",
-      "potential_hazard": null,
-      "evidence": [],
-      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "pet_poison_croton",
+          "source_match": "Codiaeum variegatum; toxic to cats",
+          "evidence_taxon": "Codiaeum variegatum",
+          "evidence_status": "toxic",
+          "match_scope": "exact taxon"
+        }
+      ],
+      "review_note": "Cat status uses the linked exact taxon source. Verify the photographed plant identity before using this reference.",
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Codiaeum variegatum",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mouth and gastrointestinal irritation",
+          "drooling",
+          "vomiting",
+          "diarrhea",
+          "minor skin irritation from sap"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.petpoisonhelpline.com/poison/croton/",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "Pet Poison Helpline describes these signs for Codiaeum variegatum; the database toxicity classification remains unverified pending its separate status review."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Codiaeum variegatum",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.petpoisonhelpline.com/poison/croton/",
+        "lookup_note": "Pet Poison Helpline names Codiaeum variegatum and describes pet effects.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Codiaeum variegatum",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mouth and gastrointestinal irritation",
+            "drooling",
+            "vomiting",
+            "diarrhea",
+            "minor skin irritation from sap"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.petpoisonhelpline.com/poison/croton/",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "Pet Poison Helpline describes these signs for Codiaeum variegatum; the database toxicity classification remains unverified pending its separate status review."
+        }
+      }
     },
     {
       "class_name": "lavender",
@@ -1940,7 +5588,45 @@
       "toxicity_status": "unknown",
       "potential_hazard": null,
       "evidence": [],
-      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic.",
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Lavandula angustifolia",
+        "match_scope": "narrower_taxon",
+        "reported_signs": [
+          "nausea",
+          "vomiting",
+          "loss of appetite"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/lavender",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA profile names L. angustifolia (misspelled Lavendula in the profile); the database class covers the broader Lavandula genus."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "unknown",
+        "potential_hazard": null,
+        "source_taxon": "Lavandula angustifolia",
+        "match_scope": "narrower_taxon",
+        "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/lavender",
+        "lookup_note": "ASPCA lists L. angustifolia as toxic to dogs; this class covers the broader Lavandula genus.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Lavandula angustifolia",
+          "match_scope": "narrower_taxon",
+          "reported_signs": [
+            "nausea",
+            "vomiting",
+            "loss of appetite"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/lavender",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "These signs are reported for Lavandula angustifolia only; the database class covers a wider genus."
+        }
+      }
     },
     {
       "class_name": "ficus lyrata",
@@ -1949,10 +5635,58 @@
         "fiddle-leaf fig"
       ],
       "taxonomic_scope": "Curated plant lookup entry for Ficus lyrata.",
-      "toxicity_status": "unknown",
-      "potential_hazard": null,
-      "evidence": [],
-      "review_note": "No class-specific toxicity source match recorded yet; unknown is not non-toxic."
+      "toxicity_status": "toxic",
+      "potential_hazard": true,
+      "evidence": [
+        {
+          "source_id": "aspca_houseplants_2019",
+          "source_match": "Ficus lyrata; toxic to cats",
+          "evidence_taxon": "Ficus lyrata",
+          "evidence_status": "toxic",
+          "match_scope": "exact common-name match; ASPCA misspells the epithet"
+        }
+      ],
+      "review_note": "Cat status uses the linked exact common-name match; ASPCA misspells the epithet source. Verify the photographed plant identity before using this reference.",
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "reported",
+        "source_taxon": "Ficus lyrata",
+        "match_scope": "same_taxon",
+        "reported_signs": [
+          "mild gastrointestinal irritation",
+          "vomiting",
+          "diarrhea",
+          "skin irritation from sap"
+        ],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/news/houseplant-safe-your-pets",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "ASPCA identifies Fiddle Leaf Fig in the article but misspells the scientific epithet as lyrate."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "toxic",
+        "potential_hazard": true,
+        "source_taxon": "Ficus lyrata",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/news/houseplant-safe-your-pets",
+        "lookup_note": "ASPCA describes Fiddle Leaf Fig as mildly toxic to cats and dogs; the article misspells the epithet lyrate.",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "reported",
+          "source_taxon": "Ficus lyrata",
+          "match_scope": "same_taxon",
+          "reported_signs": [
+            "mild gastrointestinal irritation",
+            "vomiting",
+            "diarrhea",
+            "skin irritation from sap"
+          ],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/news/houseplant-safe-your-pets",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "ASPCA identifies Fiddle Leaf Fig in the article but misspells the scientific epithet as lyrate."
+        }
+      }
     },
     {
       "class_name": "marigold",
@@ -1972,12 +5706,47 @@
           "evidence_status": "non_toxic",
           "match_scope": "species"
         }
-      ]
+      ],
+      "clinical_effects": {
+        "applies_to": "cats",
+        "reporting_status": "not_listed",
+        "source_taxon": "Calendula officinalis",
+        "match_scope": "same_taxon",
+        "reported_signs": [],
+        "serious_effects": [],
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list",
+        "reviewed_date": "2026-10-29",
+        "qualifier": "The ASPCA cat list supplies this reference classification but no plant-specific clinical signs. Non-toxic does not guarantee symptom-free ingestion."
+      },
+      "dog_toxicity": {
+        "toxicity_status": "non_toxic",
+        "potential_hazard": false,
+        "source_taxon": "Calendula officinalis",
+        "match_scope": "same_taxon",
+        "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+        "lookup_note": "ASPCA dog list: Garden Marigold (Marigold, Mary Bud, Gold bloom, Pot marigold) (Calendula officinalis).",
+        "clinical_effects": {
+          "applies_to": "dogs",
+          "reporting_status": "not_listed",
+          "source_taxon": "Calendula officinalis",
+          "match_scope": "same_taxon",
+          "reported_signs": [],
+          "serious_effects": [],
+          "source_url": "https://www.aspca.org/pet-care/animal-poison-control/dogs-plant-list",
+          "reviewed_date": "2026-10-29",
+          "qualifier": "The cited classification source does not give dog-specific clinical signs; this does not mean ingestion cannot cause symptoms."
+        }
+      }
     }
   ],
   "curation": {
     "selection_basis": "Curated set of 100 commonly encountered house, garden, and bouquet plant labels for cat-related reference lookup; selected for familiarity and source coverage, not a statistically ranked or globally definitive top-100 list.",
     "primary_toxicity_reference": "aspca_cat_list",
     "unknown_policy": "Entries without a class-specific source match remain unknown. Absence of a source record is not evidence of safety."
+  },
+  "clinical_effects_note": "All 101 entries have a linked cat clinical-effects review and a separate dog review. Reported signs are possible effects named by the linked veterinary source, not predicted symptoms for a photographed plant. Empty lists mean no plant-specific signs were listed; they do not mean ingestion is symptom-free. Serious effects are recorded only where explicitly stated, with exposure and taxonomic qualifiers. No universal severity grade is inferred. Toxicity status and clinical-effects reporting status are separate fields.",
+  "kaggle_dataset_note": {
+    "url": "https://www.kaggle.com/datasets/varoooooon/aspca-plant-toxicity",
+    "use": "Discovery lead only; no rows copied. Dataset file details and license could not be independently verified. Plant entries cite primary ASPCA or Pet Poison Helpline sources instead."
   }
 }

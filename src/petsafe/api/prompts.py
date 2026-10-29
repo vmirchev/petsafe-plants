@@ -82,6 +82,24 @@ Segmentation cannot recover details hidden from the camera.
 
 Explain briefly why segmentation would or would not help.
 
+SEGMENTATION TARGET
+
+Choose the SAM target that would provide the most useful isolated
+regions if segmentation runs. Return exactly one of:
+
+- flower: segment individual flower heads when blooms from different
+  apparent plant types overlap and the heads contain the useful
+  identifying detail.
+- plant: segment whole plants when leaves, stems, growth habit, or
+  the relationship between flowers and foliage matters; prefer this
+  for several potted plants or flowers that look too similar alone.
+
+Choose the best target even when suggest_segmentation is false so an
+explicit user request to run SAM has a target. This is a visual
+recommendation, not a claim that SAM has already found a mask.
+Explain the target choice briefly in segmentation_target_reason,
+separately from the decision to run segmentation.
+
 ADDITIONAL PHOTO DECISION
 
 Determine whether another photograph would materially improve

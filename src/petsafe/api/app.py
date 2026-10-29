@@ -1,12 +1,15 @@
 """FastAPI endpoints for the trained and Meta vision comparison flows."""
 
 import asyncio
+import json
 import os
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from PIL import Image
 
 from petsafe.api.schemas import (
     CompareResponse,
@@ -18,6 +21,7 @@ from petsafe.api.services import (
     MAX_UPLOAD_BYTES,
     MODEL_NAMES,
     RUNS_DIR,
+    ProgressCallback,
     assess_with_spark,
     available_models,
     load_uploaded_image,
@@ -84,7 +88,7 @@ def _model_name(value: str) -> str:
 @app.post("/api/flows/trained")
 async def trained_flow(
     image_file: UploadFile = File(...),
-    model_name: str = Form("efficientnet_b2"),
+    model_name: str = Form("siglip2"),
 ) -> TrainedPrediction:
     """Run one selected notebook 03 classifier and return its top classes."""
     name = _model_name(model_name)
@@ -110,83 +114,124 @@ async def muse_spark_flow(image_file: UploadFile = File(...)) -> PlantAssessment
 @app.post("/api/flows/compare", response_model=CompareResponse)
 async def compare_flows(
     image_file: UploadFile = File(...),
-    model_name: str = Form("efficientnet_b2"),
+    model_name: str = Form("siglip2"),
     force_sam: bool = Form(False),
     skip_sam: bool = Form(False),
-    sam_prompt: str = Form("flower"),
+    sam_prompt: str = Form("auto"),
 ) -> CompareResponse:
     """Run local detector/classifier and separate Muse Spark/SAM flows."""
     if force_sam and skip_sam:
         raise HTTPException(status_code=422, detail="force_sam and skip_sam cannot both be true.")
-    if sam_prompt not in {"flower", "plant"}:
-        raise HTTPException(status_code=422, detail="sam_prompt must be 'flower' or 'plant'.")
+    if sam_prompt not in {"auto", "flower", "plant"}:
+        raise HTTPException(status_code=422, detail="sam_prompt must be 'auto', 'flower', or 'plant'.")
     name = _model_name(model_name)
     image, normalized = await _read_image(image_file)
+    return await _run_comparison(image, normalized, name, force_sam, skip_sam, sam_prompt)
+
+
+async def _run_comparison(
+    image: Image.Image,
+    normalized: bytes,
+    name: str,
+    force_sam: bool,
+    skip_sam: bool,
+    sam_prompt: str,
+    emit: ProgressCallback | None = None,
+) -> CompareResponse:
+    async def publish(event: str, data: dict) -> None:
+        if emit:
+            await emit(event, data)
+
+    await publish("analyzing_scene", {"image_width": image.width, "image_height": image.height})
+
+    async def scene():
+        result = await assess_with_spark(normalized)
+        await publish("scene_analyzed", result.model_dump(mode="json"))
+        return result
+
+    async def classifier():
+        result = await predict_trained_flow(name, image)
+        await publish("trained_ready", result.model_dump(mode="json"))
+        return result
+
+    async def muse_path() -> tuple[PlantAssessment, SegmentationResult]:
+        spark = await scene()
+        selected_target = spark.segmentation_target if sam_prompt == "auto" else sam_prompt
+        selected_prompt = "flower head" if selected_target == "flower" else "plant"
+        reasons: list[str] = []
+        if spark.suggest_segmentation:
+            reasons.append("Muse Spark recommended a closer look at plant regions.")
+        if spark.distinct_plant_count > 1:
+            reasons.append("Multiple distinct plant types were reported.")
+        if spark.bouquet_type in {"mixed_species", "uncertain"}:
+            reasons.append("The bouquet may contain different plant types.")
+        if any(group.needs_inspection and group.identification_confidence == "low"
+               for group in spark.plant_groups):
+            reasons.append("A low-confidence plant group needs inspection.")
+
+        should_segment = force_sam or (bool(reasons) and not skip_sam)
+        if force_sam and not reasons:
+            reasons.append("SAM was requested explicitly.")
+        if sam_prompt != "auto" and should_segment:
+            reasons.append("The SAM target was selected manually.")
+        if skip_sam:
+            segmentation = SegmentationResult(
+                ran=False,
+                status="skipped",
+                reason=reasons or ["SAM was disabled for this request."],
+            )
+        elif not should_segment:
+            segmentation = SegmentationResult(
+                ran=False,
+                status="skipped",
+                reason=["No trigger condition was met; the original image assessment is shown."],
+            )
+        else:
+            try:
+                await publish("segmenting", {"reason": reasons, "prompt": selected_prompt})
+                segments, counts = await segment_and_assess(
+                    image, normalized, trained_model_classes(name), prompt=selected_prompt, emit=publish
+                )
+                segmentation = SegmentationResult(
+                    ran=True,
+                    status="completed" if segments else "no_masks",
+                    reason=reasons,
+                    prompt=selected_prompt,
+                    segments=segments,
+                    **counts,
+                )
+                if not segments and any(
+                    group.needs_inspection or group.identification_confidence == "low"
+                    for group in spark.plant_groups
+                ) and not spark.another_photo_needed:
+                    spark = spark.model_copy(update={
+                        "another_photo_needed": True,
+                        "photo_instructions": "Take a closer, sharper photo showing the uncertain plant and its leaves or flowers.",
+                        "photo_reason": "No useful isolated region was available for another visual assessment.",
+                    })
+            except Exception as exc:
+                # Keep the scene result usable if SAM or a crop reassessment fails.
+                segmentation = SegmentationResult(
+                    ran=True,
+                    status="failed",
+                    reason=reasons,
+                    prompt=selected_prompt,
+                    error=str(exc),
+                )
+        return spark, segmentation
+
+    # SAM can reveal specimens as soon as Muse Spark has assessed the scene.
+    # The independent classifier/DINO path may still be running.
+    tasks = [asyncio.create_task(classifier()), asyncio.create_task(muse_path())]
     try:
-        trained, spark = await asyncio.gather(
-            predict_trained_flow(name, image),
-            assess_with_spark(normalized),
-        )
+        trained, (spark, segmentation) = await asyncio.gather(*tasks)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Initial comparison failed: {exc}") from exc
-
-    reasons: list[str] = []
-    if spark.suggest_segmentation:
-        reasons.append("Muse Spark recommended a closer look at plant regions.")
-    if spark.distinct_plant_count > 1:
-        reasons.append("Multiple distinct plant types were reported.")
-    if spark.bouquet_type in {"mixed_species", "uncertain"}:
-        reasons.append("The bouquet may contain different plant types.")
-    if any(group.needs_inspection and group.identification_confidence == "low"
-           for group in spark.plant_groups):
-        reasons.append("A low-confidence plant group needs inspection.")
-
-    should_segment = force_sam or (bool(reasons) and not skip_sam)
-    if force_sam and not reasons:
-        reasons.append("SAM was requested explicitly.")
-    if skip_sam:
-        segmentation = SegmentationResult(
-            ran=False,
-            status="skipped",
-            reason=reasons or ["SAM was disabled for this request."],
-        )
-    elif not should_segment:
-        segmentation = SegmentationResult(
-            ran=False,
-            status="skipped",
-            reason=["No trigger condition was met; the original image assessment is shown."],
-        )
-    else:
-        try:
-            segments, counts = await segment_and_assess(
-                image, normalized, trained_model_classes(name), prompt=sam_prompt
-            )
-            segmentation = SegmentationResult(
-                ran=True,
-                status="completed" if segments else "no_masks",
-                reason=reasons,
-                prompt=sam_prompt,
-                segments=segments,
-                **counts,
-            )
-            if not segments and any(
-                group.needs_inspection or group.identification_confidence == "low"
-                for group in spark.plant_groups
-            ) and not spark.another_photo_needed:
-                spark = spark.model_copy(update={
-                    "another_photo_needed": True,
-                    "photo_instructions": "Take a closer, sharper photo showing the uncertain plant and its leaves or flowers.",
-                    "photo_reason": "No useful isolated region was available for another visual assessment.",
-                })
-        except Exception as exc:
-            # Keep the two initial results usable if SAM or a crop reassessment fails.
-            segmentation = SegmentationResult(
-                ran=True,
-                status="failed",
-                reason=reasons,
-                prompt=sam_prompt,
-                error=str(exc),
-            )
+    finally:
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     return CompareResponse(
         trained_flow=trained,
@@ -194,6 +239,59 @@ async def compare_flows(
         segmentation=segmentation,
         image_width=image.width,
         image_height=image.height,
+    )
+
+
+@app.post("/api/flows/compare-stream")
+async def stream_comparison(
+    image_file: UploadFile = File(...),
+    model_name: str = Form("siglip2"),
+    force_sam: bool = Form(False),
+    skip_sam: bool = Form(False),
+    sam_prompt: str = Form("auto"),
+) -> StreamingResponse:
+    """Stream real comparison events over an SSE response to a multipart POST."""
+    if force_sam and skip_sam:
+        raise HTTPException(422, "force_sam and skip_sam cannot both be true.")
+    if sam_prompt not in {"auto", "flower", "plant"}:
+        raise HTTPException(422, "sam_prompt must be auto, flower, or plant.")
+    name = _model_name(model_name)
+    image, normalized = await _read_image(image_file)
+
+    async def events():
+        queue: asyncio.Queue[tuple[str, dict]] = asyncio.Queue()
+
+        async def emit(event: str, data: dict) -> None:
+            await queue.put((event, data))
+
+        async def run():
+            try:
+                result = await _run_comparison(
+                    image, normalized, name, force_sam, skip_sam, sam_prompt, emit
+                )
+                await emit("completed", result.model_dump(mode="json"))
+            except Exception as exc:
+                await emit("error", {"message": str(exc)})
+
+        task = asyncio.create_task(run())
+        try:
+            while True:
+                try:
+                    event, data = await asyncio.wait_for(queue.get(), timeout=15)
+                except asyncio.TimeoutError:
+                    yield ": keepalive\n\n"
+                    continue
+                yield f"event: {event}\ndata: {json.dumps(data)}\n\n"
+                if event in {"completed", "error"}:
+                    break
+        finally:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 

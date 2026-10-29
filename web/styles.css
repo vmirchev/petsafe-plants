@@ -203,7 +203,7 @@ h3 { margin: 0; font: 700 18px/1.2 'Avenir Next', Avenir, 'Segoe UI', system-ui,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  html:not(.motion-enabled) *, html:not(.motion-enabled) *::before, html:not(.motion-enabled) *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
 
 /* Plant check experience */
@@ -253,12 +253,6 @@ h1 em { color: var(--green); font-style: normal; }
 .flower-boxes { position: absolute; z-index: 4; inset: 0; pointer-events: none; }
 .flower-box { position: absolute; border: 2px solid #d8ff8c; border-radius: 4px; box-shadow: 0 0 0 1px rgba(13, 39, 19, .65), 0 0 14px rgba(193, 255, 128, .7); }
 .flower-box span { position: absolute; left: -2px; bottom: 100%; max-width: 180px; padding: 4px 6px; overflow: hidden; border-radius: 4px 4px 0 0; background: #d8ff8c; color: #193b27; font: 9px 'SFMono-Regular', Consolas, monospace; text-overflow: ellipsis; white-space: nowrap; text-transform: capitalize; }
-.scan-beam { position: absolute; z-index: 1; left: 0; top: -130px; width: 100%; height: 130px; opacity: 0; pointer-events: none; background: linear-gradient(to bottom, transparent, rgba(190, 255, 150, .18) 35%, rgba(184, 255, 139, .43) 80%, rgba(215, 255, 169, .5)); mix-blend-mode: screen; }
-.scan-line { position: absolute; z-index: 2; top: 0; left: 0; width: 100%; height: 4px; opacity: 0; pointer-events: none; background: linear-gradient(90deg, transparent, #dcff92 12%, #fff9c5 50%, #a8ec89 88%, transparent); box-shadow: 0 0 24px 9px rgba(190, 255, 135, .95); }
-.is-scanning .scan-beam { opacity: 1; animation: scan-beam-sweep 3s linear infinite; }
-.is-scanning .scan-line { opacity: 1; animation: scan-line-sweep 3s linear infinite; }
-@keyframes scan-beam-sweep { 0% { top: -130px; opacity: 0; } 8% { opacity: 1; } 90% { opacity: 1; } 100% { top: calc(100% - 130px); opacity: 0; } }
-@keyframes scan-line-sweep { 0% { top: 0; opacity: 0; } 8% { opacity: 1; } 90% { opacity: 1; } 100% { top: calc(100% - 4px); opacity: 0; } }
 .scan-corners { position: absolute; inset: 17px; pointer-events: none; }
 .scan-corners i { position: absolute; width: 18px; height: 18px; border-color: rgba(227, 255, 187, .8); border-style: solid; }
 .scan-corners i:nth-child(1) { top: 0; left: 0; border-width: 1px 0 0 1px; }
@@ -380,7 +374,5 @@ h2 { font-size: 27px; letter-spacing: -.05em; }
   .disclaimer { align-items: flex-start; margin: 23px 0; padding: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .is-scanning .scan-beam, .is-scanning .scan-line, .is-scanning .readout-dot, .primary-button.is-loading .button-icon, .progress-orbit i, .progress-track span { animation: none !important; }
-  .is-scanning .scan-beam { top: 35%; }
-  .is-scanning .scan-line { top: 65%; }
+  html:not(.motion-enabled) .is-scanning .readout-dot, html:not(.motion-enabled) .primary-button.is-loading .button-icon, html:not(.motion-enabled) .progress-orbit i, html:not(.motion-enabled) .progress-track span { animation: none !important; }
 }

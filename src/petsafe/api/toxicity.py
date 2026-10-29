@@ -7,7 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from petsafe.api.schemas import ToxicityEvidence, ToxicityResult
+from petsafe.api.schemas import ClinicalEffects, DogToxicity, ToxicityEvidence, ToxicityResult
 
 DEFAULT_TOXICITY_DB = (
     Path(__file__).resolve().parents[3] / "data" / "toxicity" / "plant_toxicity.json"
@@ -99,4 +99,12 @@ def lookup_toxicity(plant_name: str | None) -> ToxicityResult:
         taxonomic_scope=plant.get("taxonomic_scope"),
         evidence=evidence,
         lookup_note=plant.get("review_note") or plant.get("source_qualification"),
+        clinical_effects=(
+            ClinicalEffects.model_validate(plant["clinical_effects"])
+            if plant.get("clinical_effects") else None
+        ),
+        dog_toxicity=(
+            DogToxicity.model_validate(plant["dog_toxicity"])
+            if plant.get("dog_toxicity") else None
+        ),
     )

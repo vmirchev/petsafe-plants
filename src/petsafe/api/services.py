@@ -5,6 +5,7 @@ import base64
 import io
 import json
 import os
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -29,7 +30,9 @@ from petsafe.api.schemas import (
 )
 from petsafe.api.toxicity import load_toxicity_database, lookup_toxicity
 
-MODEL_NAMES = ("efficientnet_b2", "dinov3", "siglip2")
+ProgressCallback = Callable[[str, dict[str, Any]], Awaitable[None]]
+
+MODEL_NAMES = ("siglip2",)
 DATASET_CLASSES = 18
 MAX_UPLOAD_BYTES = int(os.getenv("PETSAFE_MAX_UPLOAD_BYTES", str(12 * 1024 * 1024)))
 MAX_IMAGE_SIDE = int(os.getenv("PETSAFE_MAX_IMAGE_SIDE", "2048"))
@@ -80,6 +83,8 @@ ASSESSMENT_SCHEMA: dict[str, Any] = {
                 "distinct_plant_count": {"type": "integer"},
                 "plant_groups": {"type": "array", "items": _PLANT_GROUP_SCHEMA},
                 "suggest_segmentation": {"type": "boolean"},
+                "segmentation_target": {"type": "string", "enum": ["flower", "plant"]},
+                "segmentation_target_reason": {"type": "string"},
                 "segmentation_reason": {"type": "string"},
                 "another_photo_needed": {"type": "boolean"},
                 "photo_instructions": {"type": "string"},
@@ -87,7 +92,7 @@ ASSESSMENT_SCHEMA: dict[str, Any] = {
             },
             "required": [
                 "is_bouquet", "bouquet_type", "distinct_plant_count", "plant_groups",
-                "suggest_segmentation",
+                "suggest_segmentation", "segmentation_target", "segmentation_target_reason",
                 "segmentation_reason",
                 "another_photo_needed", "photo_instructions", "photo_reason",
             ],
@@ -254,7 +259,7 @@ async def predict_trained(name: str, image: Image.Image) -> TrainedPrediction:
     if cached is not None:
         return TrainedPrediction.model_validate(cached).model_copy(update={"cache_hit": True})
 
-    prediction = await asyncio.to_thread(get_trained_model(name).predict, rgb)
+    prediction = await asyncio.to_thread(lambda: get_trained_model(name).predict(rgb))
     cache_result(cache_key, prediction.model_dump(mode="json"))
     return prediction
 
@@ -362,7 +367,7 @@ async def assess_with_spark(image_bytes: bytes, extra_instruction: str = "") -> 
     )
     prompt_hash = image_digest(developer_prompt.encode("utf-8"))
     cache_key = (
-        f"spark:v3:{SPARK_MODEL}:{prompt_hash}:"
+        f"spark:v4:{SPARK_MODEL}:{prompt_hash}:"
         f"{image_digest(image_bytes)}:"
         f"{image_digest(extra_instruction.encode('utf-8'))}"
     )
@@ -555,7 +560,8 @@ async def segment_and_assess(
     image: Image.Image,
     image_bytes: bytes,
     class_names: list[str],
-    prompt: str = "flower",
+    prompt: str = "flower head",
+    emit: ProgressCallback | None = None,
 ) -> tuple[list[SegmentAssessment], dict[str, int]]:
     """Filter SAM masks before asking Muse Spark about informative crops."""
     api_key = os.getenv("MODEL_API_KEY")
@@ -596,8 +602,23 @@ async def segment_and_assess(
             candidates.append(candidate)
     selected = _select_mask_candidates(candidates, image.width * image.height)
     segments: list[SegmentAssessment] = []
-    for candidate in selected:
-        crop_bytes = _encode_mask_crop(image, candidate)
+    crops = [(candidate, _encode_mask_crop(image, candidate)) for candidate in selected]
+    if emit:
+        await emit("segments_ready", {
+            "regions": [
+                {
+                    "object_id": candidate.object_id,
+                    "bounds": candidate.bounds,
+                    "crop_data_url": _data_url(crop_bytes, "image/png"),
+                }
+                for candidate, crop_bytes in crops
+            ],
+            "mask_count": mask_count,
+            "filtered_count": mask_count - len(selected),
+        })
+        if crops:
+            await emit("identifying_regions", {"count": len(crops)})
+    for candidate, crop_bytes in crops:
         assessment = await assess_with_spark(
             crop_bytes,
             "This is a transparent-background crop of a SAM-selected plant region. "
@@ -612,5 +633,7 @@ async def segment_and_assess(
                 group.plant_identification.casefold() in names for group in assessment.plant_groups
             ),
         ))
+        if emit:
+            await emit("region_assessed", segments[-1].model_dump(mode="json"))
     return segments, {"mask_count": mask_count, "filtered_count": mask_count - len(selected),
                       "assessed_count": len(segments)}

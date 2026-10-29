@@ -13,6 +13,11 @@
 !web/**
 web/archive/
 
+# Keep browser state and streaming regression tests.
+!tests/
+tests/*
+!tests/web-investigation.test.mjs
+
 # Track Jupyter notebooks.
 !notebooks/
 notebooks/*
