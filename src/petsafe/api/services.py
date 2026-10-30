@@ -25,6 +25,7 @@ from petsafe.api.schemas import (
     FlowerDetection,
     PlantAssessment,
     SegmentAssessment,
+    SparkToxicityOpinion,
     SparkUsage,
     TrainedPrediction,
 )
@@ -354,6 +355,84 @@ async def predict_trained_flow(name: str, image: Image.Image) -> TrainedPredicti
 
 def _data_url(data: bytes, media_type: str = "image/jpeg") -> str:
     return f"data:{media_type};base64," + base64.b64encode(data).decode("ascii")
+
+
+TOXICITY_OPINION_PROMPT = (
+    "You are answering an optional, unverified question about possible pet toxicity. "
+    "You have no reference database or live sources in this task. The plant name "
+    "is only a visual hypothesis and may be wrong. Use general model knowledge "
+    "to say whether there may be a toxicity concern for the named animal. "
+    "Return possible_concern only when you recall a plausible hazard; otherwise "
+    "return unknown. Never claim a plant is safe, non-toxic, or verified. "
+    "Do not invent citations, symptoms, treatments, or a confidence percentage. "
+    "Keep the explanation brief and state the key uncertainty."
+)
+TOXICITY_OPINION_SCHEMA: dict[str, Any] = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "unverified_pet_toxicity_opinion",
+        "strict": True,
+        "schema": {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "risk_signal": {"type": "string", "enum": ["possible_concern", "unknown"]},
+                "explanation": {"type": "string"},
+                "uncertainty": {"type": "string"},
+            },
+            "required": ["risk_signal", "explanation", "uncertainty"],
+        },
+    },
+}
+
+
+async def ask_spark_toxicity_opinion(
+    image_bytes: bytes, plant_name: str, animal: str,
+) -> SparkToxicityOpinion:
+    """Ask Muse Spark for a non-authoritative concern signal without local lookup."""
+    prompt_hash = image_digest(TOXICITY_OPINION_PROMPT.encode("utf-8"))
+    cache_key = (
+        f"spark-toxicity-opinion:v1:{SPARK_MODEL}:{prompt_hash}:"
+        f"{image_digest(image_bytes)}:"
+        f"{image_digest(f'{plant_name}:{animal}'.encode('utf-8'))}"
+    )
+    cached = get_cached_result(cache_key)
+    if cached is not None:
+        return SparkToxicityOpinion.model_validate(cached)
+    api_key = os.getenv("MODEL_API_KEY")
+    if not api_key:
+        raise RuntimeError("Set MODEL_API_KEY in the API server environment.")
+    from openai import AsyncOpenAI
+
+    client = AsyncOpenAI(base_url=MODEL_API_BASE, api_key=api_key, timeout=120, max_retries=2)
+    try:
+        response = await client.chat.completions.create(
+            model=SPARK_MODEL,
+            messages=[
+                {"role": "developer", "content": TOXICITY_OPINION_PROMPT},
+                {"role": "user", "content": [
+                    {"type": "text", "text": (
+                        f"Visual hypothesis: {plant_name}. Animal: {animal}. "
+                        "Could this plant pose a toxicity concern for this animal?"
+                    )},
+                    {"type": "image_url", "image_url": {"url": _data_url(image_bytes)}},
+                ]},
+            ],
+            response_format=TOXICITY_OPINION_SCHEMA,
+            extra_body={"prompt_cache_key": f"petsafe-toxicity-opinion-{prompt_hash[:20]}"},
+            max_completion_tokens=450,
+            reasoning_effort="minimal",
+        )
+    finally:
+        await client.close()
+    choice = response.choices[0]
+    if choice.finish_reason == "length":
+        raise RuntimeError("Muse Spark returned a truncated toxicity opinion.")
+    if not choice.message.content:
+        raise RuntimeError("Muse Spark returned an empty toxicity opinion.")
+    opinion = SparkToxicityOpinion.model_validate_json(choice.message.content)
+    cache_result(cache_key, opinion.model_dump(mode="json"))
+    return opinion
 
 
 async def assess_with_spark(image_bytes: bytes, extra_instruction: str = "") -> PlantAssessment:

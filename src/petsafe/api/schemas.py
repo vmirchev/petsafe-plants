@@ -89,6 +89,16 @@ class SparkUsage(BaseModel):
     cache_hit_ratio: float | None = None
 
 
+class SparkToxicityOpinion(BaseModel):
+    """Unverified model opinion that cannot replace a toxicity database match."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    risk_signal: Literal["possible_concern", "unknown"]
+    explanation: str
+    uncertainty: str
+
+
 class PlantAssessment(BaseModel):
     """Structured multi-plant visual assessment and local toxicity lookups."""
 
@@ -172,6 +182,15 @@ class CompareResponse(BaseModel):
     """Side-by-side response for both user-visible analysis flows."""
 
     trained_flow: TrainedPrediction
+    muse_spark_flow: PlantAssessment
+    segmentation: SegmentationResult
+    image_width: int
+    image_height: int
+
+
+class MuseResponse(BaseModel):
+    """Muse Spark scene assessment and optional SAM region reassessments."""
+
     muse_spark_flow: PlantAssessment
     segmentation: SegmentationResult
     image_width: int

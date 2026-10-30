@@ -15,6 +15,10 @@ services:
       TORCH_HOME: /cache/torch
     volumes:
       - type: bind
+        source: ./src
+        target: /app/src
+        read_only: true
+      - type: bind
         source: ./web
         target: /app/web
         read_only: true

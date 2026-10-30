@@ -12,11 +12,14 @@ import("https://cdn.jsdelivr.net/npm/motion@14.6.0/+esm")
   .catch(() => {});
 
 const byId = (id) => document.getElementById(id);
+const museOnly = document.body.dataset.flow === "muse";
 
 const els = {
+  pageShell: document.querySelector(".page-shell"),
   workspace: document.querySelector(".workspace"),
   apiStatus: byId("api-status"),
   dropzone: byId("dropzone"),
+  sampleGallery: byId("sample-gallery"),
   uploadEmpty: byId("upload-empty"),
   imageStage: byId("image-stage"),
   imageInput: byId("image-input"),
@@ -24,16 +27,22 @@ const els = {
   uploadTitle: byId("upload-title"),
   uploadSubtitle: byId("upload-subtitle"),
   preview: byId("image-preview"),
+  backdrop: byId("image-backdrop"),
   flowerBoxes: byId("flower-boxes"),
   scanField: byId("scan-field"),
   questionLayer: byId("question-layer"),
   scanMessage: byId("scan-message"),
   workspaceStepLabel: byId("workspace-step-label"),
+  expandCanvas: byId("expand-canvas"),
+  fullscreenCanvas: byId("fullscreen-canvas"),
   removeImage: byId("remove-image"),
   model: byId("model-select"),
   samMode: byId("sam-mode"),
   samPrompt: byId("sam-prompt"),
   compare: byId("compare-button"),
+  rerunPhoto: byId("rerun-photo"),
+  newPlant: byId("new-plant-button"),
+  dialogNewPlant: byId("dialog-new-plant"),
   motionToggle: byId("motion-toggle"),
   error: byId("error-banner"),
   runStatus: byId("run-status"),
@@ -82,6 +91,12 @@ function setApiStatus(text, state) {
 
 async function loadModels() {
   try {
+    if (museOnly) {
+      const response = await fetch(apiUrl("/healthz"));
+      if (!response.ok) throw new Error(`API returned ${response.status}`);
+      setApiStatus("API connected", "online");
+      return;
+    }
     const response = await fetch(apiUrl("/api/models"));
     if (!response.ok) throw new Error(`API returned ${response.status}`);
     const data = await response.json();
@@ -144,6 +159,8 @@ function setFile(file) {
   previewUrl = URL.createObjectURL(file);
   els.imageStage.classList.remove("acquired");
   els.preview.src = previewUrl;
+  els.backdrop.src = previewUrl;
+  els.backdrop.hidden = false;
   els.preview.hidden = false;
   els.uploadEmpty.hidden = true;
   els.imageStage.hidden = false;
@@ -162,6 +179,8 @@ function setFile(file) {
 }
 
 function clearFile() {
+  if (document.fullscreenElement === els.pageShell) document.exitFullscreen();
+  setCanvasExpanded(false);
   archiveInvestigation();
   cancelInvestigation();
   resetReport();
@@ -171,6 +190,8 @@ function clearFile() {
   if (previewUrl) URL.revokeObjectURL(previewUrl);
   previewUrl = null;
   els.preview.removeAttribute("src");
+  els.backdrop.removeAttribute("src");
+  els.backdrop.hidden = true;
   els.preview.hidden = true;
   els.flowerBoxes.replaceChildren();
   els.uploadEmpty.hidden = false;
@@ -185,6 +206,7 @@ function clearFile() {
   );
   els.chooseImage.hidden = false;
   els.compare.disabled = true;
+  syncInvestigationActions();
   stopScanAnimation();
 }
 
@@ -245,7 +267,7 @@ function percent(value) {
   return `${(Number(value) * 100).toFixed(1)}%`;
 }
 
-function animalStatusRow(lookup) {
+function animalStatusRow(lookup, onSelect = null) {
   const row = element("div", "animal-statuses");
   for (const [animal, record] of [["Cats", lookup], ["Dogs", lookup?.dog_toxicity]]) {
     const status = record?.toxicity_status;
@@ -255,7 +277,13 @@ function animalStatusRow(lookup) {
     const label = status === "toxic" ? "listed toxic"
       : potential ? "potential hazard"
       : status === "non_toxic" ? "listed non-toxic" : "unresolved";
-    row.append(element("span", `animal-status ${tone}`, `${animal} · ${label}`));
+    const badge = element(onSelect ? "button" : "span",
+      `animal-status ${tone}`, `${animal} · ${label}`);
+    if (onSelect) {
+      badge.type = "button";
+      badge.addEventListener("click", () => onSelect(animal, badge));
+    }
+    row.append(badge);
   }
   return row;
 }
@@ -267,13 +295,24 @@ function renderCacheNote(container, cacheHit) {
     );
 }
 
-function renderToxicity(container, result, context) {
+function renderToxicity(container, result, context, summaryLabel = null, splitAnimals = false) {
   const lookup = result?.toxicity;
-  if (!lookup) return;
+  if (!lookup) {
+    if (!splitAnimals) return;
+    const cats = element("details", "evidence-details inspection-animal-evidence");
+    cats.append(element("summary", "", "Cats · reference details"),
+      element("p", "toxicity-note", "No matched cat toxicity reference for this identification."));
+    const dogs = element("details", "evidence-details inspection-animal-evidence");
+    dogs.append(element("summary", "", "Dogs · reference details"),
+      element("p", "toxicity-note", "No matched dog toxicity reference for this identification."));
+    container.append(cats, dogs);
+    return { cats, dogs };
+  }
   const details = element("details", "evidence-details");
   const status = (animal) => animal?.toxicity_status === "toxic" || animal?.potential_hazard
     ? "Potential hazard" : animal?.toxicity_status === "non_toxic" ? "Listed non-toxic" : "Unresolved";
-  details.append(element("summary", "", `Pet toxicity · Cats: ${status(lookup)} · Dogs: ${status(lookup.dog_toxicity)}`));
+  details.append(element("summary", "", summaryLabel ||
+    `Pet toxicity · Cats: ${status(lookup)} · Dogs: ${status(lookup.dog_toxicity)}`));
   const box = element(
     "div",
     `toxicity-lookup toxicity-${lookup.toxicity_status || "unknown"}`,
@@ -356,8 +395,9 @@ function renderToxicity(container, result, context) {
   if (links.childElementCount) box.append(links);
   details.append(box);
   const dog = lookup.dog_toxicity;
+  let dogBox = null;
   if (dog) {
-    const dogBox = element(
+    dogBox = element(
       "div",
       `toxicity-lookup toxicity-${dog.toxicity_status} dog-toxicity`,
     );
@@ -408,6 +448,16 @@ function renderToxicity(container, result, context) {
     }
     if (dogLinks.childElementCount) dogBox.append(dogLinks);
     details.append(dogBox);
+  }
+  if (splitAnimals) {
+    const cats = element("details", "evidence-details inspection-animal-evidence");
+    cats.append(element("summary", "", "Cats · symptoms and sources"), box);
+    const dogs = element("details", "evidence-details inspection-animal-evidence");
+    dogs.append(element("summary", "", "Dogs · symptoms and sources"));
+    dogs.append(dogBox || element("p", "toxicity-note",
+      "No matched dog toxicity reference for this identification."));
+    container.append(cats, dogs);
+    return { cats, dogs };
   }
   container.append(details);
 }
@@ -551,19 +601,6 @@ function renderTrained(result, sourceWidth, sourceHeight) {
 }
 
 function renderSpark(result) {
-  const overview = byId("scene-overview");
-  overview.hidden = false;
-  overview.replaceChildren(
-    element(
-      "strong",
-      "",
-      `${result.distinct_plant_count} distinct plant type${result.distinct_plant_count === 1 ? "" : "s"}`,
-    ),
-  );
-  if (result.is_bouquet)
-    overview.append(
-      element("span", "", result.bouquet_type.replaceAll("_", " ")),
-    );
   els.sparkResult.replaceChildren();
   if (result.plant_groups?.length)
     els.sparkResult.append(element("p", "scene-summary-line",
@@ -605,7 +642,7 @@ function renderSpark(result) {
     els.sparkResult.append(link);
   }
   const technical = element("details", "result-details technical-details");
-  technical.append(element("summary", "", "Model and segmentation details"));
+  technical.append(element("summary", "", "Developer Inspector · model details"));
   renderCacheNote(technical, result.cache_hit);
   renderSparkUsage(technical, result);
   renderRawMetaResponse(technical, result);
@@ -681,16 +718,17 @@ function renderSegmentation(result) {
     .filter(Boolean)
     .join(" ");
   els.segments.replaceChildren();
-  for (const segment of result.segments || []) {
+  for (const [index, segment] of (result.segments || []).entries()) {
+    const displayIndex = index + 1;
     const card = element("article", "segment-card");
     const imageWrap = element("div", "segment-image-wrap");
     const image = element("img", "segment-image");
     image.src = segment.crop_data_url;
-    image.alt = `SAM segment ${segment.object_id}`;
+    image.alt = `SAM specimen ${displayIndex}`;
     imageWrap.append(image);
     const body = element("div", "segment-body");
     body.append(
-      element("p", "segment-label", `SAM region ${segment.object_id}`),
+      element("p", "segment-label", `Specimen ${displayIndex}`),
     );
     for (const group of segment.assessment.plant_groups || []) {
       body.append(element("p", "segment-plant", group.plant_identification));
@@ -715,14 +753,12 @@ function renderSegmentation(result) {
         "mini-tag",
         `${segment.assessment.distinct_plant_count} plant type(s)`,
       ),
-      element(
-        "span",
-        `mini-tag${segment.in_trained_taxonomy ? "" : " outside"}`,
-        segment.in_trained_taxonomy
-          ? "in trained classes"
-          : "outside trained classes",
-      ),
     );
+    if (!museOnly) tags.append(element(
+      "span",
+      `mini-tag${segment.in_trained_taxonomy ? "" : " outside"}`,
+      segment.in_trained_taxonomy ? "in trained classes" : "outside trained classes",
+    ));
     body.append(tags);
     renderCacheNote(body, segment.assessment.cache_hit);
     renderSparkUsage(body, segment.assessment);
@@ -735,11 +771,12 @@ function renderSegmentation(result) {
 async function compare() {
   if (!selectedFile) return;
   cancelInvestigation(true);
+  questionOrder = shuffledQuestionOrder();
   const request = ++requestGeneration;
   const controller = new AbortController();
   activeRequest = controller;
   resetReport();
-  els.trainedResult.replaceChildren(
+  if (!museOnly) els.trainedResult.replaceChildren(
     element("p", "empty-state", "Awaiting the classifier result…"),
   );
   els.sparkResult.replaceChildren(
@@ -753,16 +790,18 @@ async function compare() {
   try {
     const form = new FormData();
     form.append("image_file", selectedFile, selectedFile.name);
-    form.append("model_name", els.model.value);
+    if (!museOnly) form.append("model_name", els.model.value);
     form.append("force_sam", String(els.samMode.value === "force"));
     form.append("skip_sam", String(els.samMode.value === "skip"));
     form.append("sam_prompt", els.samPrompt.value);
-    const response = await fetch(apiUrl("/api/flows/compare-stream"), {
+    const response = await fetch(apiUrl(museOnly ? "/api/flows/muse-stream" : "/api/flows/compare-stream"), {
       method: "POST",
       body: form,
       signal: controller.signal,
     });
     if (!response.ok) {
+      if (museOnly && response.status === 405)
+        throw new Error("The running API does not have the Muse investigation route yet. Recreate the API container with: docker compose up -d --force-recreate --no-deps api");
       const payload = await response.json();
       throw new Error(
         typeof payload.detail === "string"
@@ -810,14 +849,36 @@ async function compare() {
   } finally {
     if (request === requestGeneration) {
       activeRequest = null;
-      els.compare.disabled = !selectedFile;
-      els.compare.querySelector(".button-label").textContent =
-        "Investigate again";
+      syncInvestigationActions();
     }
   }
 }
 
+function chooseNewPlant() {
+  els.imageInput.value = "";
+  els.imageInput.click();
+}
 els.chooseImage.addEventListener("click", () => els.imageInput.click());
+els.sampleGallery?.addEventListener("click", async (event) => {
+  const choice = event.target.closest("button[data-sample]");
+  if (!choice || !els.sampleGallery.contains(choice)) return;
+  const choices = els.sampleGallery.querySelectorAll("button[data-sample]");
+  choices.forEach((button) => { button.disabled = true; });
+  choice.classList.add("is-loading");
+  clearError();
+  try {
+    const response = await fetch(choice.dataset.sample);
+    if (!response.ok) throw new Error(`Sample image unavailable (${response.status}).`);
+    const blob = await response.blob();
+    const name = choice.dataset.sample.split("/").at(-1);
+    setFile(new File([blob], name, { type: blob.type || "image/png" }));
+  } catch (error) {
+    showError(error.message || "Could not load the sample image.");
+  } finally {
+    choices.forEach((button) => { button.disabled = false; });
+    choice.classList.remove("is-loading");
+  }
+});
 els.dropzone.addEventListener("click", (event) => {
   if (event.target.closest("button")) return;
   if (event.target.closest(".image-stage")) return;
@@ -827,9 +888,18 @@ els.imageInput.addEventListener("change", () =>
   setFile(els.imageInput.files[0]),
 );
 els.removeImage.addEventListener("click", clearFile);
-els.compare.addEventListener("click", compare);
+els.compare.addEventListener("click", () => {
+  if (investigationState === "completed") chooseNewPlant();
+  else compare();
+});
+els.rerunPhoto.addEventListener("click", compare);
+els.newPlant.addEventListener("click", chooseNewPlant);
+els.dialogNewPlant.addEventListener("click", () => {
+  byId("specimen-dialog").close();
+  chooseNewPlant();
+});
 byId("scene-card").addEventListener("click", () => {
-  els.sparkResult.scrollIntoView({ behavior: motionDisabled() ? "auto" : "smooth", block: "start" });
+  inspectScene();
 });
 byId("clear-results").addEventListener("click", () => {
   cancelInvestigation();
@@ -864,7 +934,7 @@ window.addEventListener("beforeunload", () => {
   historyUrls.forEach((url) => URL.revokeObjectURL(url));
   if (previewUrl) URL.revokeObjectURL(previewUrl);
 });
-window.addEventListener("resize", () => {
+function refreshCanvasGeometry() {
   if (els.dropzone.classList.contains("is-scanning")) {
     stopScanAnimation();
     startScanAnimation();
@@ -877,7 +947,36 @@ window.addEventListener("resize", () => {
     const { detections, sourceWidth, sourceHeight } = visibleFlowerDetections;
     renderFlowerBoxes(detections, sourceWidth, sourceHeight);
   }
+}
+function setCanvasExpanded(expanded) {
+  if (els.workspace.classList.contains("is-expanded") === expanded) return;
+  els.workspace.classList.toggle("is-expanded", expanded);
+  els.expandCanvas.setAttribute("aria-pressed", String(expanded));
+  els.expandCanvas.textContent = expanded ? "Restore canvas" : "Expand canvas";
+  if (expanded) els.workspace.scrollIntoView({ block: "start" });
+  requestAnimationFrame(refreshCanvasGeometry);
+}
+els.expandCanvas.addEventListener("click", () =>
+  setCanvasExpanded(!els.workspace.classList.contains("is-expanded")));
+els.fullscreenCanvas.addEventListener("click", async () => {
+  try {
+    if (document.fullscreenElement === els.pageShell) await document.exitFullscreen();
+    else await els.pageShell.requestFullscreen();
+  } catch (error) {
+    showError(`Could not enter full screen: ${error.message}`);
+  }
 });
+document.addEventListener("fullscreenchange", () => {
+  const active = document.fullscreenElement === els.pageShell;
+  els.fullscreenCanvas.setAttribute("aria-pressed", String(active));
+  els.fullscreenCanvas.textContent = active ? "Exit full screen" : "Full screen";
+  requestAnimationFrame(refreshCanvasGeometry);
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && els.workspace.classList.contains("is-expanded") &&
+      !byId("specimen-dialog").open) setCanvasExpanded(false);
+});
+window.addEventListener("resize", refreshCanvasGeometry);
 
 // Pipeline states are entered only from upload actions or server events.
 const machine = createInvestigationState();
@@ -886,9 +985,9 @@ let activeRequest = null;
 let requestGeneration = 0;
 let questionTimer = null;
 let questionIndex = 0;
+const toxicityOpinionRequests = new Set();
 let specimenPreviewTimer = null;
 let sceneAssessments = [];
-let dismissedSafetyText = null;
 let lastReport = null;
 let sourceDimensions = { width: 1, height: 1 };
 let inspectedSpecimen = null;
@@ -933,6 +1032,17 @@ const questions = [
   "Could another plant be partially hidden?",
   "Would closer inspection reveal more detail?",
 ];
+function shuffledQuestionOrder(previousLast) {
+  const order = [...questions];
+  for (let index = order.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [order[index], order[randomIndex]] = [order[randomIndex], order[index]];
+  }
+  if (order.length > 1 && order[0] === previousLast)
+    [order[0], order[1]] = [order[1], order[0]];
+  return order;
+}
+let questionOrder = [...questions];
 const thoughtPositions = ["thought-one", "thought-two", "thought-three"];
 let thoughtSerial = 0;
 let layoutAnimation = null;
@@ -1014,19 +1124,38 @@ function showNextThought() {
   const position = thoughtSerial % thoughtPositions.length;
   const old = els.questionLayer.querySelector(`[data-position="${position}"]`);
   if (old) animateThought(old, false).finally(() => old.remove());
-  const bubble = element("span", `thought-bubble ${thoughtPositions[position]}`, questions[questionIndex]);
+  const bubble = element("span", `thought-bubble ${thoughtPositions[position]}`, questionOrder[questionIndex]);
   bubble.dataset.position = String(position);
   bubble.style.opacity = motionDisabled() ? "1" : "0";
   els.questionLayer.append(bubble);
   animateThought(bubble, true);
   thoughtSerial += 1;
-  questionIndex = (questionIndex + 1) % questions.length;
+  questionIndex += 1;
+  if (questionIndex === questionOrder.length) {
+    questionOrder = shuffledQuestionOrder(questionOrder.at(-1));
+    questionIndex = 0;
+  }
 }
 function clearThoughts() {
   clearInterval(questionTimer);
   questionTimer = null;
   els.questionLayer.replaceChildren();
   thoughtSerial = 0;
+}
+function syncInvestigationActions() {
+  const busy = machine.busy;
+  els.compare.disabled = busy || !selectedFile;
+  els.compare.classList.toggle("is-loading", busy);
+  els.rerunPhoto.disabled = busy || !selectedFile;
+  els.expandCanvas.disabled = !selectedFile;
+  els.fullscreenCanvas.disabled = !selectedFile || !document.fullscreenEnabled;
+  els.newPlant.hidden = investigationState !== "completed";
+  els.dialogNewPlant.hidden = investigationState !== "completed";
+  els.compare.querySelector(".button-label").textContent = busy
+    ? "Investigating…"
+    : investigationState === "completed" ? "Investigate another plant"
+      : investigationState === "error" ? "Retry this photo"
+        : selectedFile ? "Investigate this photo" : "Begin investigation";
 }
 function setInvestigationState(state, keepCentered = false) {
   if (!Object.hasOwn(stateTitles, state)) return;
@@ -1041,21 +1170,19 @@ function setInvestigationState(state, keepCentered = false) {
   els.progressTitle.textContent = stateTitles[state];
   const busy = machine.busy;
   els.scanProgress.hidden = !busy;
-  els.compare.disabled = busy || !selectedFile;
-  els.compare.classList.toggle("is-loading", busy);
-  els.model.disabled = busy;
+  syncInvestigationActions();
+  if (els.model) els.model.disabled = busy;
   els.samMode.disabled = busy;
   els.samPrompt.disabled = busy;
-  els.compare.querySelector(".button-label").textContent = busy
-    ? "Investigating…"
-    : selectedFile ? "Run investigation again" : "Begin investigation";
   // Search circles appear immediately; no model result is implied by their positions.
   if (busy) startScanAnimation();
   else stopScanAnimation();
   els.progressDetail.textContent = {
     uploading: "Transferring your image. Visual search has begun; model findings will appear when returned.",
     analyzing_scene: "Looking for visual evidence in the photograph.",
-    scene_analyzed: "Scene evidence is available below. The comparison is continuing.",
+    scene_analyzed: museOnly
+      ? "Scene evidence is available below. Checking whether regions need inspection."
+      : "Scene evidence is available below. The comparison is continuing.",
     segmenting: "SAM is finding masks. Regions will appear when they arrive.",
     segments_ready: "These are actual selected SAM crops.",
     identifying_regions: "Each specimen receives its own visual assessment and local reference lookup.",
@@ -1073,6 +1200,8 @@ function setInvestigationState(state, keepCentered = false) {
   }
 }
 function cancelInvestigation(keepCentered = false) {
+  toxicityOpinionRequests.forEach((controller) => controller.abort());
+  toxicityOpinionRequests.clear();
   requestGeneration += 1;
   activeRequest?.abort();
   activeRequest = null;
@@ -1094,11 +1223,10 @@ function clearSpecimenMotion() {
 function resetReport() {
   clearInterval(specimenPreviewTimer);
   specimenPreviewTimer = null;
-  byId("scene-overview").hidden = true;
+  resetOverview();
   sceneAssessments = [];
   byId("scene-card").hidden = true;
   byId("scene-card-link").classList.remove("visible");
-  dismissedSafetyText = null;
   lastReport = null;
   specimenRecords.clear();
   byId("specimen-rail").replaceChildren();
@@ -1122,7 +1250,7 @@ function handlePipelineEvent(event, data) {
     updateSafety();
     updateFollowup(data);
   }
-  if (event === "trained_ready")
+  if (event === "trained_ready" && !museOnly)
     renderTrained(data, sourceDimensions.width, sourceDimensions.height);
   if (event === "segments_ready") {
     byId("scene-card").hidden = true;
@@ -1146,15 +1274,13 @@ function handlePipelineEvent(event, data) {
     if (item) {
       item.data = data;
       const groups = data.assessment.plant_groups || [];
-      item.caption.textContent =
-        groups.map((group) => group.plant_identification).join(" · ") ||
-        "Unresolved specimen";
-      item.taxon.textContent = groups
-        .map(
-          (group) =>
-            `${group.scientific_name} · ${group.identification_confidence} confidence`,
-        )
-        .join(" / ");
+      const primary = groups.find((group) =>
+        group.plant_identification && !/^(unknown|unidentified|uncertain)/i.test(group.plant_identification)) || groups[0];
+      const additional = Math.max(0, groups.length - 1);
+      item.caption.textContent = primary?.plant_identification || "Unresolved specimen";
+      item.taxon.textContent = primary?.scientific_name &&
+        !/^(unknown|unidentified|uncertain)/i.test(primary.scientific_name)
+        ? primary.scientific_name : "";
       item.button.classList.add("identified");
       const hazard = groups.some(
         (group) =>
@@ -1163,6 +1289,10 @@ function handlePipelineEvent(event, data) {
           group.toxicity?.dog_toxicity?.toxicity_status === "toxic" ||
           group.toxicity?.dog_toxicity?.potential_hazard,
       );
+      const primaryHazard = primary?.toxicity?.toxicity_status === "toxic" ||
+        primary?.toxicity?.potential_hazard ||
+        primary?.toxicity?.dog_toxicity?.toxicity_status === "toxic" ||
+        primary?.toxicity?.dog_toxicity?.potential_hazard;
       item.button.classList.toggle("hazard", hazard);
       const nonToxic =
         groups.length &&
@@ -1171,11 +1301,15 @@ function handlePipelineEvent(event, data) {
             group.toxicity?.dog_toxicity?.toxicity_status === "non_toxic",
         );
       item.button.classList.toggle("non-toxic", Boolean(nonToxic));
-      item.status.textContent = hazard
-        ? "Potential hazard"
+      const status = hazard
+        ? (primaryHazard ? "Potential hazard" : "Hazard among groups")
         : nonToxic
           ? "Listed non-toxic"
           : "Unresolved · inspect";
+      item.status.textContent = additional ? `${status} · +${additional} groups` : status;
+      item.button.setAttribute("aria-label",
+        `Inspect specimen ${item.displayIndex}: ${item.caption.textContent}. ${item.status.textContent}.`);
+      placeSpecimens();
       if (
         inspectedSpecimen === String(data.object_id) &&
         byId("specimen-dialog").open
@@ -1188,7 +1322,7 @@ function handlePipelineEvent(event, data) {
   }
   if (event === "completed") {
     lastReport = data;
-    renderTrained(data.trained_flow, data.image_width, data.image_height);
+    if (!museOnly) renderTrained(data.trained_flow, data.image_width, data.image_height);
     renderSpark(data.muse_spark_flow);
     renderSegmentation(data.segmentation);
     if (!data.segmentation.segments?.length) showSceneCard(data.muse_spark_flow);
@@ -1261,7 +1395,7 @@ function showSceneCard(assessment) {
   card.replaceChildren(
     element("span", "eyebrow", "WHOLE PHOTO ASSESSMENT"),
     element("strong", "", names.length ? names.slice(0, 2).join(" · ") : "No plant identified"),
-    element("small", "", `${assessment.distinct_plant_count ?? 0} distinct plant type(s) reported · View details below`),
+    element("small", "", `${assessment.distinct_plant_count ?? 0} distinct plant type(s) reported · Select for details`),
   );
   card.hidden = false;
   requestAnimationFrame(positionSceneCardLink);
@@ -1271,24 +1405,51 @@ function clampSpecimen(button, left, top) {
   const height = els.imageStage.clientHeight;
   return {
     left: Math.max(5, Math.min(left, width - button.offsetWidth - 5)),
-    top: Math.max(64, Math.min(top, height - button.offsetHeight - 72)),
+    top: Math.max(5, Math.min(top, height - button.offsetHeight - 5)),
   };
+}
+function positionSpecimenControls(item) {
+  const card = item.button;
+  const left = parseFloat(card.style.left) || 0;
+  const top = parseFloat(card.style.top) || 0;
+  item.closeButton.style.left = `${left + card.offsetWidth - 29}px`;
+  item.closeButton.style.top = `${top + 7}px`;
+  const box = sourceBox(item.data.bounds);
+  item.reopenButton.style.left = `${box.left + box.width / 2}px`;
+  item.reopenButton.style.top = `${box.top + box.height / 2}px`;
 }
 function placeSpecimens() {
   if (!els.imageStage.clientWidth) return;
+  const stageWidth = els.imageStage.clientWidth;
+  const stageHeight = els.imageStage.clientHeight;
   els.imageStage.classList.toggle(
     "compact-specimens",
     els.imageStage.clientHeight < 560,
   );
   const placed = [];
   [...specimenRecords.values()].forEach((item, index) => {
+    if (item.closed) {
+      positionSpecimenControls(item);
+      return;
+    }
     if (item.manual) {
       const position = clampSpecimen(item.button,
         parseFloat(item.button.style.left) || 0,
         parseFloat(item.button.style.top) || 0);
       item.button.style.left = `${position.left}px`;
       item.button.style.top = `${position.top}px`;
+      positionSpecimenControls(item);
       placed.push({ ...position, width: item.button.offsetWidth, height: item.button.offsetHeight });
+      return;
+    }
+    if (item.positioned && item.stageWidth === stageWidth &&
+        item.stageHeight === stageHeight) {
+      const position = clampSpecimen(item.button,
+        parseFloat(item.button.style.left) || 0,
+        parseFloat(item.button.style.top) || 0);
+      placed.push({ ...position, width: item.button.offsetWidth,
+        height: item.button.offsetHeight });
+      positionSpecimenControls(item);
       return;
     }
     const box = sourceBox(item.data.bounds);
@@ -1305,17 +1466,27 @@ function placeSpecimens() {
       [centerX + gap, centerY + gap],
       [centerX - width - gap, centerY - height - gap],
     ];
+    for (let top = 5; top <= stageHeight - height - 5; top += Math.max(48, height / 2)) {
+      for (let left = 5; left <= stageWidth - width - 5; left += Math.max(48, width / 2))
+        candidates.push([left, top]);
+    }
     const overlap = (a, b) => Math.max(0, Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left))
       * Math.max(0, Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top));
-    const position = candidates.map(([left, top]) => {
+    const scored = candidates.map(([left, top]) => {
       const p = clampSpecimen(item.button, left, top);
       const rect = { ...p, width, height };
       const distance = Math.hypot(p.left + width / 2 - centerX, p.top + height / 2 - centerY);
-      const score = distance + overlap(rect, box) * 4 + placed.reduce((sum, other) => sum + overlap(rect, other) * 8, 0);
-      return { ...p, score };
-    }).sort((a, b) => a.score - b.score)[0];
+      const cardOverlap = placed.reduce((sum, other) => sum + overlap(rect, other), 0);
+      return { ...p, cardOverlap, score: distance + overlap(rect, box) * 4 + cardOverlap * 1000 };
+    });
+    const clear = scored.filter((candidate) => candidate.cardOverlap === 0);
+    const position = (clear.length ? clear : scored).sort((a, b) => a.score - b.score)[0];
     item.button.style.left = `${position.left}px`;
     item.button.style.top = `${position.top}px`;
+    item.positioned = true;
+    item.stageWidth = stageWidth;
+    item.stageHeight = stageHeight;
+    positionSpecimenControls(item);
     placed.push({ ...position, width, height });
   });
 }
@@ -1346,6 +1517,7 @@ function enableSpecimenDrag(id, item) {
     const position = clampSpecimen(button, pointer.left + dx, pointer.top + dy);
     button.style.left = `${position.left}px`;
     button.style.top = `${position.top}px`;
+    positionSpecimenControls(item);
     highlightSpecimen(id);
   });
   const endDrag = (event) => {
@@ -1370,31 +1542,76 @@ function enableSpecimenDrag(id, item) {
       (parseFloat(button.style.top) || 0) + step[1]);
     button.style.left = `${position.left}px`;
     button.style.top = `${position.top}px`;
+    positionSpecimenControls(item);
     highlightSpecimen(id);
   });
+}
+function closeSpecimenCard(id) {
+  const item = specimenRecords.get(id);
+  if (!item) return;
+  clearInterval(specimenPreviewTimer);
+  specimenPreviewTimer = null;
+  item.closed = true;
+  item.button.hidden = true;
+  item.closeButton.hidden = true;
+  item.reopenButton.hidden = false;
+  highlightSpecimen(null);
+  placeSpecimens();
+  item.reopenButton.focus({ preventScroll: true });
+}
+function reopenSpecimenCard(id) {
+  const item = specimenRecords.get(id);
+  if (!item?.closed) return;
+  item.closed = false;
+  item.manual = false;
+  item.positioned = false;
+  item.button.hidden = false;
+  item.closeButton.hidden = false;
+  item.reopenButton.hidden = true;
+  placeSpecimens();
+  highlightSpecimen(id);
+  item.button.focus();
 }
 function addSpecimen(data) {
   const id = String(data.object_id);
   if (specimenRecords.has(id)) return;
+  const displayIndex = specimenRecords.size + 1;
   const button = element("button", "floating-specimen");
   button.type = "button";
+  button.id = `specimen-${id}`;
   button.style.setProperty("--float-delay", `${-specimenRecords.size * 1.3}s`);
   const image = element("img", "specimen-image");
   image.src = data.crop_data_url;
-  image.alt = `SAM specimen ${id}`;
+  image.alt = `SAM specimen ${displayIndex}`;
   image.draggable = false;
-  const caption = element("strong", "", `Specimen ${id}`);
+  const caption = element("strong", "", `Specimen ${displayIndex}`);
   const taxon = element("span", "specimen-taxon");
   const status = element("small", "", "Awaiting regional assessment");
   button.append(
-    element("span", "specimen-id", `SPECIMEN / ${id}`),
+    element("span", "specimen-id", `SPECIMEN / ${displayIndex}`),
     image,
     caption,
     taxon,
     status,
   );
-  byId("specimen-rail").append(button);
-  const item = { data, button, image, caption, taxon, status, manual: false, suppressClick: false };
+  const closeButton = element("button", "specimen-close", "×");
+  closeButton.type = "button";
+  closeButton.setAttribute("aria-label", `Close specimen ${displayIndex} card`);
+  const reopenButton = element("button", "specimen-reopen", `+${displayIndex}`);
+  reopenButton.type = "button";
+  reopenButton.hidden = true;
+  reopenButton.setAttribute("aria-label", `Reopen specimen ${displayIndex} card`);
+  byId("specimen-rail").append(button, closeButton, reopenButton);
+  const item = { data, displayIndex, button, closeButton, reopenButton, image, caption, taxon,
+    status, manual: false, closed: false, suppressClick: false };
+  closeButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    closeSpecimenCard(id);
+  });
+  reopenButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    reopenSpecimenCard(id);
+  });
   image.addEventListener("load", () => {
     const canvas = document.createElement("canvas");
     const scale = Math.min(1, 160 / Math.max(image.naturalWidth, image.naturalHeight));
@@ -1515,6 +1732,7 @@ function highlightSpecimen(id) {
     width: `${box.width}px`, height: `${box.height}px`,
   });
   overlay.append(bounds);
+  if (item.closed) return;
   const stage = els.imageStage.getBoundingClientRect();
   const ratioX = stage.width / els.imageStage.clientWidth;
   const ratioY = stage.height / els.imageStage.clientHeight;
@@ -1526,13 +1744,12 @@ function highlightSpecimen(id) {
   line.setAttribute("y2", target.top + 20);
   connection.style.display = "block";
 }
-function hoverPhotoSpecimen(event) {
-  if (event.pointerType === "touch" || els.imageStage.querySelector(".floating-specimen.is-dragging")) return;
-  if (event.target.closest(".floating-specimen, .scene-card, .remove-button")) return;
+function specimenAtPhotoPoint(event, closedOnly = false) {
   const stage = els.imageStage.getBoundingClientRect();
   const x = (event.clientX - stage.left) * els.imageStage.clientWidth / stage.width;
   const y = (event.clientY - stage.top) * els.imageStage.clientHeight / stage.height;
   const matches = [...specimenRecords].filter(([, item]) => {
+    if (closedOnly && !item.closed) return false;
     const box = sourceBox(item.data.bounds);
     if (x < box.left || x > box.left + box.width || y < box.top || y > box.top + box.height) return false;
     if (!item.maskAlpha) return true;
@@ -1545,7 +1762,12 @@ function hoverPhotoSpecimen(event) {
     const two = sourceBox(b[1].data.bounds);
     return one.width * one.height - two.width * two.height;
   });
-  const id = matches[0]?.[0] || null;
+  return matches[0]?.[0] || null;
+}
+function hoverPhotoSpecimen(event) {
+  if (event.pointerType === "touch" || els.imageStage.querySelector(".floating-specimen.is-dragging")) return;
+  if (event.target.closest(".floating-specimen, .specimen-close, .specimen-reopen, .scene-card, .remove-button")) return;
+  const id = specimenAtPhotoPoint(event);
   if (id && specimenRecords.get(id).button.classList.contains("is-linked")) return;
   if (!id && !els.imageStage.querySelector(".floating-specimen.is-linked")) return;
   clearInterval(specimenPreviewTimer);
@@ -1553,6 +1775,11 @@ function hoverPhotoSpecimen(event) {
   highlightSpecimen(id);
 }
 els.imageStage.addEventListener("pointermove", hoverPhotoSpecimen);
+els.imageStage.addEventListener("click", (event) => {
+  if (event.target.closest(".floating-specimen, .specimen-close, .specimen-reopen, .scene-card, .remove-button")) return;
+  const id = specimenAtPhotoPoint(event, true);
+  if (id) reopenSpecimenCard(id);
+});
 els.imageStage.addEventListener("pointerleave", () => {
   if (!els.imageStage.querySelector(".floating-specimen.is-dragging")) highlightSpecimen(null);
 });
@@ -1570,80 +1797,256 @@ function previewSpecimens(ids) {
     highlightSpecimen(ids[index++]);
   }, 1100);
 }
+function inspectionHazard(group) {
+  const lookup = group.toxicity;
+  return lookup?.toxicity_status === "toxic" || lookup?.potential_hazard ||
+    lookup?.dog_toxicity?.toxicity_status === "toxic" || lookup?.dog_toxicity?.potential_hazard;
+}
+function addToxicityOpinion(details, group, animal, imageUrl) {
+  const wrapper = element("div", "toxicity-opinion");
+  const button = element("button", "toxicity-opinion-button", `Ask Muse Spark about ${animal} ↗`);
+  button.type = "button";
+  const answer = element("div", "toxicity-opinion-answer");
+  answer.hidden = true;
+  wrapper.append(button, element("p", "toxicity-opinion-disclaimer",
+    "AI opinion only. This response is not verified against a toxicity database or source references and cannot establish pet safety."), answer);
+  button.addEventListener("click", async () => {
+    const controller = new AbortController();
+    toxicityOpinionRequests.add(controller);
+    button.disabled = true;
+    button.textContent = "Asking Muse Spark…";
+    answer.hidden = false;
+    answer.replaceChildren(element("p", "", "Checking for a possible concern…"));
+    try {
+      const image = await fetch(imageUrl, { signal: controller.signal }).then((response) => response.blob());
+      const form = new FormData();
+      form.append("image_file", image, "inspection-image.jpg");
+      form.append("plant_name", (group.scientific_name || group.plant_identification || "Unidentified plant").slice(0, 160));
+      form.append("animal", animal);
+      const response = await fetch(apiUrl("/api/flows/muse-toxicity-opinion"), {
+        method: "POST", body: form, signal: controller.signal,
+      });
+      const result = await response.json();
+      if ([404, 405].includes(response.status)) throw new Error("Restart the API to enable this question.");
+      if (!response.ok) throw new Error(result.detail || `API returned ${response.status}`);
+      answer.replaceChildren(
+        element("strong", "", result.risk_signal === "possible_concern" ? "Possible concern · unverified" : "Unknown · unverified"),
+        element("p", "", result.explanation),
+        element("p", "toxicity-opinion-uncertainty", result.uncertainty),
+      );
+      button.textContent = `Ask Muse Spark about ${animal} again ↗`;
+    } catch (error) {
+      if (error.name === "AbortError") return;
+      answer.replaceChildren(element("p", "toxicity-opinion-error", `Could not get an AI opinion: ${error.message}`));
+      button.textContent = `Retry Muse Spark for ${animal} ↗`;
+    } finally {
+      toxicityOpinionRequests.delete(controller);
+      button.disabled = false;
+    }
+  });
+  details.append(wrapper);
+}
+function renderInspectionGroup(group, primary = false, tieCount = 1, imageUrl = "") {
+  const card = element("section", primary ? "inspection-primary" : "inspection-group");
+  if (primary) card.append(element("p", "inspection-kicker",
+    `HIGHEST REPORTED CONFIDENCE · ${group.identification_confidence.toUpperCase()}${tieCount > 1 ? ` · TIED WITH ${tieCount - 1} OTHER GROUP${tieCount === 2 ? "" : "S"}` : ""}`));
+  card.append(
+    element("h2", "", group.plant_identification || "Unresolved plant"),
+    element("p", "inspection-taxon", group.scientific_name || "Scientific identity unresolved"),
+  );
+  if (!primary) card.append(element("p", "inspection-confidence",
+    `${group.identification_confidence} identification confidence`));
+  const evidence = renderToxicity(card, group,
+    "Reference applies only if this visual identification is correct.",
+    null, true);
+  if (!group.toxicity || group.toxicity.toxicity_status === "unknown")
+    addToxicityOpinion(evidence.cats, group, "cats", imageUrl);
+  if (!group.toxicity?.dog_toxicity || group.toxicity.dog_toxicity.toxicity_status === "unknown")
+    addToxicityOpinion(evidence.dogs, group, "dogs", imageUrl);
+  const badges = animalStatusRow(group.toxicity, (animal) => {
+    const target = animal === "Cats" ? evidence.cats : evidence.dogs;
+    const other = animal === "Cats" ? evidence.dogs : evidence.cats;
+    other.open = false;
+    target.open = true;
+    target.scrollIntoView({ block: "nearest" });
+  });
+  const both = element("button", "inspection-both-toggle", "Show both cat and dog details");
+  both.type = "button";
+  const syncBoth = () => {
+    const open = evidence.cats.open && evidence.dogs.open;
+    both.textContent = open ? "Hide both cat and dog details" : "Show both cat and dog details";
+    both.setAttribute("aria-expanded", String(open));
+  };
+  for (const [index, target] of [evidence.cats, evidence.dogs].entries()) {
+    const badge = badges.children[index];
+    target.id = `inspection-evidence-${++inspectionEvidenceSerial}`;
+    badge.setAttribute("aria-controls", target.id);
+    target.addEventListener("toggle", () => {
+      badge.setAttribute("aria-expanded", String(target.open));
+      syncBoth();
+    });
+    badge.setAttribute("aria-expanded", "false");
+  }
+  both.setAttribute("aria-controls", `${evidence.cats.id} ${evidence.dogs.id}`);
+  both.setAttribute("aria-expanded", "false");
+  both.addEventListener("click", () => {
+    const open = !(evidence.cats.open && evidence.dogs.open);
+    evidence.cats.open = open;
+    evidence.dogs.open = open;
+    syncBoth();
+    if (open) evidence.cats.scrollIntoView({ block: "nearest" });
+  });
+  card.insertBefore(badges, evidence.cats);
+  card.insertBefore(both, evidence.cats);
+  return card;
+}
+let inspectionEvidenceSerial = 0;
+function showInspection(assessment, imageUrl, imageAlt, heading, pendingMessage) {
+  toxicityOpinionRequests.forEach((controller) => controller.abort());
+  toxicityOpinionRequests.clear();
+  inspectionEvidenceSerial = 0;
+  const panel = byId("specimen-detail");
+  panel.replaceChildren(element("p", "eyebrow", heading));
+  const top = element("div", "inspection-top");
+  const image = element("img", "inspection-image");
+  image.src = imageUrl;
+  image.alt = imageAlt;
+  const findings = element("div", "inspection-findings");
+  top.append(image, findings);
+  panel.append(top);
+  if (!assessment) {
+    findings.append(element("p", "inspection-empty", pendingMessage));
+  } else {
+    const confidence = { high: 3, medium: 2, low: 1 };
+    const groups = [...(assessment.plant_groups || [])].sort((a, b) =>
+      (confidence[b.identification_confidence] || 0) -
+      (confidence[a.identification_confidence] || 0));
+    if (groups.length) {
+      const highest = groups[0].identification_confidence;
+      const tieCount = groups.filter((group) => group.identification_confidence === highest).length;
+      findings.append(renderInspectionGroup(groups[0], true, tieCount, imageUrl));
+      findings.append(element("p", "inspection-caveat",
+        "Visual identification is provisional; toxicity status depends on the plant match."));
+    } else {
+      findings.append(element("p", "inspection-empty",
+        "No plant identity was resolved from this image."));
+    }
+    const others = groups.slice(1);
+    if (others.length) {
+      const otherHazards = others.filter(inspectionHazard).length;
+      const more = element("details", "inspection-more");
+      more.append(element("summary", "",
+        `Other reported plant groups (${others.length})${otherHazards ? ` · ${otherHazards} potential hazard${otherHazards === 1 ? "" : "s"}` : ""}`));
+      others.forEach((group) => more.append(renderInspectionGroup(group, false, 1, imageUrl)));
+      panel.append(more);
+    }
+    if (assessment.another_photo_needed)
+      panel.append(element("p", "inspection-followup",
+        assessment.photo_instructions || assessment.photo_reason ||
+        "Another photo is needed for a closer assessment."));
+  }
+  if (!byId("specimen-dialog").open) byId("specimen-dialog").showModal();
+}
+function inspectScene() {
+  const assessment = lastReport?.muse_spark_flow || sceneAssessments[0];
+  if (!assessment || !selectedFile) return;
+  inspectedSpecimen = null;
+  showInspection(assessment, els.preview.src, "Original plant photograph",
+    "WHOLE PHOTO / MUSE SPARK");
+}
 function inspectSpecimen(id) {
   const item = specimenRecords.get(id);
   if (!item) return;
   inspectedSpecimen = id;
-  const panel = byId("specimen-detail");
-  panel.replaceChildren(element("p", "eyebrow", `SPECIMEN / ${id}`));
-  const image = element("img", "inspection-image");
-  image.src = item.data.crop_data_url;
-  image.alt = `Selected SAM specimen ${id}`;
-  panel.append(image);
-  const assessment = item.data.assessment;
-  if (!assessment)
-    panel.append(
-      element(
-        "p",
-        "",
-        machine.busy
-          ? "Regional assessment is still running."
-          : "No regional assessment was returned. Review the retained scene report.",
-      ),
-    );
-  for (const group of assessment?.plant_groups || []) {
-    panel.append(
-      element("h2", "", group.plant_identification),
-      element(
-        "p",
-        "",
-        `${group.scientific_name} · ${group.identification_confidence} identification confidence`,
-      ),
-    );
-    renderToxicity(panel, group, "Visual identity remains a hypothesis.");
-  }
-  if (assessment?.another_photo_needed)
-    panel.append(element("p", "", assessment.photo_instructions));
-  if (!byId("specimen-dialog").open) byId("specimen-dialog").showModal();
+  showInspection(item.data.assessment, item.data.crop_data_url,
+    `Selected SAM specimen ${item.displayIndex}`, `SPECIMEN / ${item.displayIndex}`,
+    machine.busy ? "Regional assessment is still running." :
+      "No regional assessment was returned. Review the retained scene report.");
+}
+function summaryMetric(value, label, tone = "") {
+  const metric = element("span", `overview-metric ${tone}`);
+  metric.append(element("strong", "", String(value)), element("span", "", label));
+  return metric;
+}
+function resetOverview() {
+  byId("scene-overview").replaceChildren(
+    summaryMetric("—", "plant types"),
+    summaryMetric("—", "potential hazards"),
+    summaryMetric("—", "unresolved identities"),
+  );
 }
 function updateSafety() {
-  highlightSpecimen(null);
-  const groups = sceneAssessments.flatMap((item) => item.plant_groups || []);
-  const hazards = groups.filter(
-    (item) =>
-      item.toxicity?.toxicity_status === "toxic" ||
-      item.toxicity?.potential_hazard ||
-      item.toxicity?.dog_toxicity?.toxicity_status === "toxic" ||
-      item.toxicity?.dog_toxicity?.potential_hazard,
-  );
-  const unresolved =
-    sceneAssessments.some((item) => item.another_photo_needed) ||
-    groups.some(
-      (item) =>
-        item.identification_confidence === "low" ||
-        !item.toxicity ||
-        item.toxicity.toxicity_status === "unknown" ||
-        !item.toxicity.dog_toxicity ||
-        item.toxicity.dog_toxicity.toxicity_status === "unknown",
-    );
-  const banner = byId("safety-summary");
-  banner.className = hazards.length ? "hazard-summary" : "unresolved-summary";
-  const names = [...new Set(hazards.map((item) => item.plant_identification))];
-  const message = hazards.length
-    ? `Potential hazard identified: ${names.join(", ")}. Review the linked toxicity references and verify identity.${unresolved ? " Some plants remain unresolved." : ""}`
-    : "Investigation incomplete: some identities or toxicity matches remain unresolved.";
-  banner.hidden = (!hazards.length && !unresolved) || dismissedSafetyText === message;
-  banner.replaceChildren(document.createTextNode(message));
-  if (!banner.hidden) {
-    const dismiss = element("button", "safety-dismiss", "×");
-    dismiss.type = "button";
-    dismiss.setAttribute("aria-label", "Dismiss investigation warning");
-    dismiss.addEventListener("click", () => {
-      dismissedSafetyText = message;
-      banner.hidden = true;
+  const records = new Map();
+  sceneAssessments.forEach((assessment, assessmentIndex) => {
+    const specimenId = assessmentIndex === 0 ? null :
+      [...specimenRecords].find(([, item]) => item.data.assessment === assessment)?.[0];
+    (assessment.plant_groups || []).forEach((group, groupIndex) => {
+      const scientific = (group.scientific_name || "").trim();
+      const name = group.plant_identification || scientific || "Unidentified plant";
+      const key = (/^(unknown|unidentified|uncertain|not identified)/i.test(scientific)
+        ? name : scientific || name).trim().toLocaleLowerCase();
+      const lookup = group.toxicity;
+      const hazard = lookup?.toxicity_status === "toxic" || lookup?.potential_hazard ||
+        lookup?.dog_toxicity?.toxicity_status === "toxic" || lookup?.dog_toxicity?.potential_hazard;
+      const unresolvedIdentity = group.needs_inspection || group.identification_confidence === "low" ||
+        !scientific || /^(unknown|unidentified|uncertain|not identified)/i.test(scientific);
+      const unresolvedToxicity = !lookup || lookup.toxicity_status === "unknown" ||
+        !lookup.dog_toxicity || lookup.dog_toxicity.toxicity_status === "unknown";
+      const href = specimenId ? `#specimen-${specimenId}` :
+        assessmentIndex === 0 ? `#scene-group-${groupIndex}` : null;
+      const prior = records.get(key);
+      records.set(key, {
+        name: prior?.name || name,
+        href: prior?.href || href,
+        hazard: Boolean(prior?.hazard || hazard),
+        unresolvedIdentity: Boolean(prior?.unresolvedIdentity || unresolvedIdentity),
+        unresolvedToxicity: Boolean(prior?.unresolvedToxicity || unresolvedToxicity),
+      });
     });
-    banner.append(dismiss);
+  });
+  const entries = [...records.values()];
+  const hazards = entries.filter((item) => item.hazard);
+  const unresolved = entries.filter((item) => item.unresolvedIdentity);
+  const unknownToxicity = entries.filter((item) => item.unresolvedToxicity);
+  const needsPhoto = sceneAssessments.some((item) => item.another_photo_needed);
+  const unresolvedCount = Math.max(unresolved.length, needsPhoto ? 1 : 0);
+  const reportedCount = sceneAssessments[0]?.distinct_plant_count ?? entries.length;
+  byId("scene-overview").replaceChildren(
+    summaryMetric(reportedCount, "plant types"),
+    summaryMetric(hazards.length, "potential hazards", hazards.length ? "hazard" : ""),
+    summaryMetric(unresolvedCount, "unresolved identities", unresolvedCount ? "unresolved" : ""),
+  );
+  const banner = byId("safety-summary");
+  banner.hidden = !hazards.length && !unresolvedCount && !unknownToxicity.length;
+  if (banner.hidden) return;
+  banner.className = `investigation-alert ${hazards.length ? "has-hazard" : "has-unresolved"}`;
+  banner.replaceChildren(
+    element("strong", "", hazards.length
+      ? `${hazards.length} potentially hazardous plant type${hazards.length === 1 ? "" : "s"}`
+      : "Investigation incomplete"),
+    element("p", "", hazards.length
+      ? "Review each possible match and its linked cat and dog toxicity sources."
+      : "One or more plant identities or toxicity matches need verification."),
+  );
+  const links = element("div", "summary-links");
+  for (const record of hazards) {
+    const link = element("a", "hazard-link", record.name);
+    link.href = record.href || "#spark-result";
+    link.addEventListener("click", (event) => {
+      const target = document.getElementById(link.hash.slice(1));
+      if (target?.tagName === "DETAILS") target.open = true;
+      if (target?.classList.contains("floating-specimen")) {
+        event.preventDefault();
+        target.click();
+      }
+    });
+    links.append(link);
   }
+  if (links.childElementCount) banner.append(links);
+  if (unresolvedCount) banner.append(element("p", "unresolved-note",
+    `${unresolvedCount} unresolved identification${unresolvedCount === 1 ? "" : "s"}${unresolved.length ? `: ${unresolved.map((item) => item.name).join(", ")}.` : ". Another photo was requested."}`));
+  if (unknownToxicity.length) banner.append(element("p", "unresolved-note",
+    `${unknownToxicity.length} plant type${unknownToxicity.length === 1 ? " has" : "s have"} unresolved cat or dog toxicity references.`));
 }
 function updateFollowup(assessment) {
   if (!assessment.another_photo_needed) return;
@@ -1673,7 +2076,7 @@ function archiveInvestigation() {
   image.alt = "Previous investigation photograph";
   const report = els.results.cloneNode(true);
   report.hidden = false;
-  report.querySelector("#clear-results")?.remove();
+  report.querySelector(".report-actions")?.remove();
   report.removeAttribute("id");
   report.querySelectorAll("[id]").forEach((node) => node.removeAttribute("id"));
   entry.append(image);
@@ -1687,11 +2090,13 @@ function archiveInvestigation() {
   sceneAssessments = [];
   els.results.hidden = true;
 }
-byId("followup-button").addEventListener("click", () => els.imageInput.click());
+byId("followup-button").addEventListener("click", chooseNewPlant);
 byId("close-specimen").addEventListener("click", () =>
   byId("specimen-dialog").close(),
 );
 byId("specimen-dialog").addEventListener("close", () => {
+  toxicityOpinionRequests.forEach((controller) => controller.abort());
+  toxicityOpinionRequests.clear();
   inspectedSpecimen = null;
 });
 window.addEventListener(
@@ -1714,5 +2119,6 @@ els.motionToggle.addEventListener("change", () => {
 });
 reducedMotion.addEventListener("change", syncMotionControl);
 syncMotionControl();
+resetOverview();
 setInvestigationState("idle");
 loadModels();

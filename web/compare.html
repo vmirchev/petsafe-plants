@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#091a14">
+    <meta name="description" content="Compare plant identification models and see source-backed pet toxicity references.">
+    <title>PetSafe Plants · Botanical Intelligence Laboratory</title>
+    <link rel="stylesheet" href="/styles.css?v=laboratory-5">
+    <link rel="stylesheet" href="/laboratory.css?v=41">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="PetSafe Plants home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M24.8 6.5C15.2 6.6 8 10.7 8 18.2c0 4.2 3 7 6.6 7 7 0 10.3-9.4 10.2-18.7Z" fill="currentColor"/><path d="M7 26c3.5-6.5 8.2-10 14.2-13" stroke="#f4f7f1" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+        <span>PetSafe <span class="brand-light">Plants</span></span>
+      </a>
+      <div class="topbar-right">
+        <a class="view-link" href="/">Muse investigation ↗</a>
+        <span class="experiment-tag">BOTANICAL INTELLIGENCE LABORATORY</span>
+        <button id="api-status" class="status-pill status-loading" type="button" title="Click to change the API base URL"><span class="status-dot"></span>Checking API</button>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="intro" hidden>
+        <div class="intro-copy-block">
+          <p class="eyebrow"><span class="eyebrow-line"></span> FIELD NOTES / VISUAL INVESTIGATION</p>
+          <h1>Every plant has<br>a <em>story to uncover.</em></h1>
+          <p class="intro-copy">Compare two independent paths: your trained model checks the full photo and Grounding DINO flower crops; Muse Spark checks the scene and can use SAM to inspect selected regions.</p>
+        </div>
+        <div class="intro-stamp" aria-hidden="true"><span>IDENTIFY</span><b>✳</b><span>THEN VERIFY</span></div>
+      </section>
+
+      <section class="workspace" aria-label="Plant image and scan settings">
+        <div class="workspace-topline"><div><span class="step-number">01</span><span id="workspace-step-label" class="section-label">ADD A PHOTO</span></div><div id="scene-overview" class="scene-overview" aria-live="polite" aria-label="Investigation summary"></div><div class="canvas-tools"><span class="format-note">JPG · PNG · WEBP <i>·</i> UP TO 12 MB</span><button id="expand-canvas" class="canvas-size-button" type="button" aria-pressed="false" disabled>Expand canvas</button><button id="fullscreen-canvas" class="canvas-size-button" type="button" aria-pressed="false" disabled>Full screen</button></div></div>
+        <div class="workspace-grid">
+          <div id="dropzone" class="dropzone">
+            <input id="image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+            <div class="upload-empty" id="upload-empty">
+              <div class="upload-icon" aria-hidden="true"><svg viewBox="0 0 80 80" fill="none"><path d="M40 65V35m0 19c-16 0-24-9-23-24 13-1 23 6 23 24Zm0-12c0-15 9-23 23-24 1 15-7 24-23 24Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M30 66h20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+              <strong id="upload-title">Drop your plant photo here</strong>
+              <span id="upload-subtitle">or <button id="choose-image" class="text-button" type="button">browse files</button></span>
+              <span class="upload-hint">A clear photo helps both flows make a better guess.</span>
+            </div>
+            <div id="image-stage" class="image-stage" hidden>
+              <img id="image-backdrop" class="image-backdrop" alt="" aria-hidden="true" hidden>
+              <img id="image-preview" class="image-preview" alt="Selected plant photograph" hidden>
+              <div class="scan-sweep" aria-hidden="true"></div>
+              <div id="source-region" aria-hidden="true"></div>
+              <div id="flower-boxes" class="flower-boxes" aria-label="Detected flower regions"></div>
+              <div id="scan-field" class="scan-field" aria-hidden="true"><span class="scan-focus"></span><span class="scan-focus"></span><span class="scan-focus"></span></div>
+              <div class="scan-corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+              <div id="question-layer" class="question-layer" aria-hidden="true"></div>
+              <svg id="scene-card-link" class="scene-card-link" aria-hidden="true"><line/><circle r="5"/></svg>
+              <button id="scene-card" class="scene-card" type="button" hidden aria-label="View whole photo assessment"></button>
+              <div class="scan-readout" aria-live="polite"><span class="readout-dot"></span><span id="scan-message">PHOTO READY</span></div>
+              <button id="remove-image" class="icon-button remove-button" type="button" aria-label="Remove image">×</button>
+              <span class="scan-disclaimer">Investigation guide · awaiting visual evidence</span>
+              <section id="specimen-workspace" class="specimen-workspace" hidden aria-label="SAM plant specimens">
+                <div class="specimen-heading"><div><p class="eyebrow">SAM 3.1 / SPECIMENS</p><h2>A closer look.</h2></div><p id="specimen-count"></p></div>
+                <p id="specimen-hint" class="specimen-hint">Drag to rearrange; select to inspect. Close a card and click its marked plant region to reopen it.</p>
+                <div id="specimen-rail" class="specimen-rail"></div>
+              </section>
+            </div>
+          </div>
+
+          <div class="settings-panel">
+            <div class="settings-heading"><span class="step-number">02</span><span class="section-label">CHOOSE YOUR CHECK</span></div>
+            <select id="model-select" hidden aria-hidden="true"><option value="siglip2">SigLIP2</option></select>
+            <div class="settings-row">
+              <details class="developer-inspector"><summary>Developer Inspector <span>Scan options</span></summary><div class="inspector-controls">
+              <label class="control-field"><span>Meta flow · SAM mode</span><select id="sam-mode" aria-label="Meta flow SAM segmentation mode"><option value="automatic">Automatic</option><option value="force">Always segment</option><option value="skip">Skip segmentation</option></select></label>
+              <label class="control-field"><span>Meta flow · SAM target</span><select id="sam-prompt" aria-label="Meta flow SAM target"><option value="auto">Spark chooses</option><option value="flower">Flower heads</option><option value="plant">Whole plants</option></select></label>
+              <label class="control-field"><span>Animations</span><select id="motion-toggle" aria-label="Investigation animations"><option value="on">On</option><option value="off">Off</option></select></label>
+              <button id="rerun-photo" class="rerun-button" type="button" disabled>Rerun this photo with these options</button>
+              </div></details>
+              <button id="compare-button" class="primary-button control-action" type="button" disabled><span class="button-icon" aria-hidden="true">✳</span><span class="button-label">Begin investigation</span><span class="button-arrow" aria-hidden="true">↗</span></button>
+            </div>
+            <p class="privacy-note"><span aria-hidden="true">◇</span> Sent to your inference API. Follow-up reports stay in this tab until it closes or reloads.</p>
+          </div>
+        </div>
+      </section>
+
+      <svg id="specimen-connection" aria-hidden="true"><line/></svg>
+      <div id="error-banner" class="error-banner" role="alert" hidden></div>
+      <section id="scan-progress" class="scan-progress" aria-live="polite" hidden>
+        <div class="progress-orbit" aria-hidden="true"><span></span><i></i></div>
+        <div class="progress-copy"><p class="progress-kicker">TWO FLOWS, ONE PHOTO</p><strong id="progress-title">Looking closely at your photo…</strong><span id="progress-detail">Preparing both image checks.</span></div>
+        <div class="progress-track" aria-hidden="true"><span></span></div>
+      </section>
+      <div id="run-status" class="run-status" aria-live="polite" hidden></div>
+      <section id="results" class="results" hidden aria-live="polite">
+        <div class="results-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> THE SAME IMAGE · TWO FLOWS</p><h2>Here’s what they noticed</h2></div><div class="report-actions"><button id="new-plant-button" class="report-next-button" type="button" hidden>Investigate another plant ↗</button><button id="clear-results" class="text-button clear-button" type="button">Clear results</button></div></div>
+        <div id="safety-summary" role="alert" hidden></div>
+        <div class="comparison-grid">
+          <article class="result-card trained-card"><div class="card-heading"><div class="card-icon trained-icon" aria-hidden="true">01</div><div><p class="card-kicker">TRAINED MODEL</p><h3>SigLIP2 + DINO</h3></div></div><div id="trained-result" class="result-content"><p class="empty-state">Waiting for the classifier…</p></div><details class="method-details"><summary>How this flow works</summary><p class="flow-path">SigLIP2 checks the full photo <span>→</span> Grounding DINO finds flower boxes <span>→</span> SigLIP2 checks each crop</p></details></article>
+          <article class="result-card spark-card"><div class="card-heading"><div class="card-icon spark-icon" aria-hidden="true">02</div><div><p class="card-kicker">META MODEL API</p><h3>Muse Spark + SAM</h3></div></div><div id="spark-result" class="result-content"><p class="empty-state">Waiting for the scene assessment…</p></div><details id="segmentation-panel" class="segmentation-panel" hidden><summary class="segmentation-heading"><span><span class="card-kicker">SAM 3.1 · SPARK RE-ASSESSMENT</span><strong>Selected regions</strong></span><span id="segmentation-status" class="status-pill"></span></summary><p id="segmentation-reason" class="segmentation-reason"></p><div id="segments-grid" class="segments-grid"></div></details><details class="method-details"><summary>How this flow works</summary><p class="flow-path">Muse Spark checks the scene <span>→</span> SAM may isolate plant regions <span>→</span> Muse Spark checks selected regions</p></details></article>
+        </div>
+      </section>
+
+      <section id="followup-panel" class="followup-panel" hidden><p class="eyebrow">CONTINUE THE INVESTIGATION</p><h2>One more perspective.</h2><p id="followup-instructions"></p><button id="followup-button" class="primary-button" type="button">Add another photograph ↗</button><small>Your previous report stays in this session.</small></section>
+      <section id="investigation-history" class="investigation-history" aria-label="Previous photographs"></section>
+      <dialog id="specimen-dialog" aria-label="Plant specimen inspection"><button id="close-specimen" class="icon-button" aria-label="Close inspection">×</button><div id="specimen-detail"></div><button id="dialog-new-plant" class="report-next-button dialog-next-button" type="button" hidden>Investigate another plant ↗</button></dialog>
+      <footer class="disclaimer"><span class="disclaimer-icon" aria-hidden="true">!</span><p><strong>Experimental results, not safety advice.</strong> Plant identities and region boundaries can be wrong. Toxicity labels are source-backed references for a possible match, not a diagnosis or guarantee of safety. Contact a veterinarian if ingestion is suspected.</p></footer>
+    </main>
+    <script src="/app.js?v=laboratory-41" type="module"></script>
+  </body>
+</html>
