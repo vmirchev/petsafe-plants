@@ -32,6 +32,16 @@ DISTINCT PLANT DETECTION
 - Set distinct_plant_count equal to the number of plant_groups.
 - Use 0 and an empty plant_groups array when no plants are visible.
 
+SEPARATE PLANT COUNT
+
+- Set separate_plant_count to the number of clearly separate whole plants
+  visible outside a bouquet. Count each distinct potted plant once, even
+  when several pots contain the same species.
+- Do not count individual flowers, flower heads, leaves, or stems as plants.
+- For a bouquet of cut flowers, set separate_plant_count to 0.
+- When separate_plant_count exceeds {max_separate_plants}, request a closer photograph of
+  one plant at a time and do not recommend SAM for the whole scene.
+
 PLANT IDENTIFICATION
 
 For each visually distinct plant group:
@@ -112,6 +122,7 @@ Request another photograph when:
 - The image is blurry, dark, or too distant.
 - Similar-looking species cannot be distinguished.
 - Multiple plants cannot be reliably separated.
+- More than {max_separate_plants} separate whole plants are visible outside a bouquet.
 - Identification remains uncertain.
 
 When requesting another photograph:

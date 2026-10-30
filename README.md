@@ -34,16 +34,13 @@ The initial experiments use frozen pretrained image encoders with trained classi
 
 | Model | Role |
 |---|---|
-| EfficientNet-B2 | CNN classification baseline |
-| Meta DINOv3 | Visual feature extraction and classification |
-| SigLIP2 | Vision-language representation baseline |
-| Grounding DINO tiny | Zero-shot flower boxes for per-crop classifier inference |
+| Meta DINOv3 ViT-S/16 | Active full-photo classifier with a trained 18-class head |
 | Meta Muse Spark | Multimodal identification comparison |
-| Meta SAM 3.1 | Planned segmentation and multi-plant analysis |
+| Meta SAM 3.1 | Conditional segmentation and multi-plant analysis |
 
 The objective is not simply to maximize classification accuracy but to understand how the models behave on difficult photographs.
 
-Notebook 04 compared all three pretrained classifiers. SigLIP2 was selected for continued training and app inference because it tied DINOv3 at 96.4% validation accuracy while achieving lower validation loss (0.144 vs. 0.213). On the 111-image internal test split, SigLIP2 scored 98.2% accuracy and 98.4% macro F1; DINOv3 scored 97.3% and 97.5%, while EfficientNet-B2 scored 81.1% and 78.7%. These are single-seed results, and possible cross-split near-duplicates could inflate the scores, so they are evidence for a promising candidate rather than a reliable performance estimate.
+Notebook 04 preserves an earlier comparison with EfficientNet-B2 and Google SigLIP2. SigLIP2 tied DINOv3 at 96.4% validation accuracy and had lower validation loss (0.144 vs. 0.213). On the 111-image internal test split, SigLIP2 scored 98.2% accuracy and 98.4% macro F1; DINOv3 scored 97.3% and 97.5%; EfficientNet-B2 scored 81.1% and 78.7%. These are single-seed results, and possible cross-split near-duplicates could inflate the scores. **The active app now uses only Meta models:** DINOv3 ViT-S/16, Muse Spark, and SAM 3.1. Historical comparison results are retained as experiment records, not used for live inference.
 
 ## Dataset
 
@@ -81,12 +78,12 @@ The repository contains Jupyter notebooks for reproducible ML experiments and a 
 |---|---|
 | `01_Plant_export_exploration.ipynb` | Dataset exploration, image properties, duplicates, and split analysis |
 | `02_Another_Dataset.ipynb` | Was removed before initial commit as some photos from dataset, could not be used. |
-| `03_Train_Plant_Fetcher_Export.ipynb` | Feature extraction and training classifier heads |
-| `04_Compare_Training_Runs.ipynb` | Comparison of training runs and evaluation metrics |
-| `05_Test_Inference.ipynb` | Evaluation on the 180-image internal holdout (notebook section number 06) |
-| `06_Compare_Muse_Spark.ipynb` | Optional comparison against Meta Muse Spark (notebook section number 05) |
+| `03_Train_Plant_Fetcher_Export.ipynb` | Feature extraction and training the Meta DINOv3 classifier head |
+| `04_Compare_Training_Runs.ipynb` | Historical comparison of three saved training runs and evaluation metrics |
+| `05_Test_Inference.ipynb` | DINOv3 evaluation on the 180-image internal holdout (notebook section number 06) |
+| `06_Compare_Muse_Spark.ipynb` | DINOv3 versus Meta Muse Spark (notebook section number 05) |
 | `07_Upload_Spark_SAM_Flow.ipynb` | Interactive image upload, Muse Spark identification, optional SAM 3.1 segmentation, and Spark on segmented crops |
-| `08_SigLIP2_Error_Review_Meta.ipynb` | Reviews every saved SigLIP2 internal-test mistake plus five seeded correct examples with Muse Spark; caches responses in Drive |
+| `08_DINOv3_Error_Review_Meta.ipynb` | Reviews every saved DINOv3 internal-test mistake plus five seeded correct examples with Muse Spark; caches responses in Drive |
 
 Notebook 06 evaluates an **internal holdout**, not an independent external dataset.
 
@@ -124,7 +121,7 @@ API calls may incur charges.
 
 ## Inference API
 
-The API compares two independent paths. **Left:** full-image classifier → [Grounding DINO tiny](https://huggingface.co/IDEA-Research/grounding-dino-tiny) zero-shot flower boxes → the same trained classifier on each box crop. Grounding DINO detects boxes; it does not produce segmentation masks. **Right:** Muse Spark scene assessment → optional SAM 3.1 masks → Muse Spark on selected regions. SAM is used only on the right. Both paths attach local source-backed toxicity lookups to their candidate identities. Grounding DINO is Apache-2.0 licensed, loads on the first trained-flow request, and downloads its weights to the configured Hugging Face cache. Detection boxes and crop predictions are hypotheses; detector scores and classifier probabilities are not calibrated safety confidence. Up to six flower boxes are shown by default. Set `PETSAFE_MAX_FLOWER_DETECTIONS` and `PETSAFE_FLOWER_DETECTION_THRESHOLD` to adjust this. It does not train models. Set `PETSAFE_RUNS_DIR` to the experiment directory containing `siglip2/`; the model needs `best_head.pt`, `config.json`, and `class_mapping.json` from notebook 03. Saved classifier weights and the dataset remain outside this repository.
+The API compares two independent Meta model paths. **Left:** DINOv3 ViT-S/16 extracts full-image features and the saved 18-class head predicts one plant identity. **Right:** Muse Spark assesses the scene → SAM 3.1 optionally isolates useful regions → Muse Spark reassesses them. SAM is used only on the right. Both paths attach local source-backed toxicity lookups to their candidate identities. The DINOv3 probability is not calibrated safety confidence, and its full-image prediction cannot identify every plant in a mixed scene. Set `PETSAFE_RUNS_DIR` to the experiment directory containing `dinov3/`; the model needs `best_head.pt`, `config.json`, and `class_mapping.json` from notebook 03. Saved classifier weights and the dataset remain outside this repository. DINOv3 access through Hugging Face requires accepted model terms and `HF_TOKEN` when the encoder is not already cached.
 
 After each visual identification, the API performs a deterministic local lookup in `data/toxicity/plant_toxicity.json` and returns separate cat and dog statuses, taxonomic scope, possible clinical signs, and source links alongside the prediction. The top-level `toxicity_status` and `clinical_effects` fields remain the cat result for existing clients; `dog_toxicity` contains the separately reviewed dog result. The 101 plant labels are a curated selection of commonly encountered house, garden, and bouquet plants, not a statistically ranked global list. Spark does not generate toxicity claims. The table is a limited reference, not a diagnosis or a guarantee of safety; unknown or unmatched identities remain unknown. `Hippeastrum` and `Amaryllis` have separate cited entries because the common name “amaryllis” refers to both; that common name alone gives an ambiguous lookup. Set `PETSAFE_TOXICITY_DB` to use a different copy. Docker includes this JSON file in the API image.
 
@@ -146,7 +143,7 @@ export HF_TOKEN="your-hugging-face-token"
 uv run uvicorn petsafe.api.app:app --app-dir src --host 127.0.0.1 --port 8000 --reload
 ```
 
-Open `http://127.0.0.1:8000/` for the Muse Spark investigation. It runs Muse Spark on the uploaded image, conditionally calls SAM 3.1, then reassesses selected regions with Muse Spark. This page does not load or require trained model artifacts. Open `http://127.0.0.1:8000/compare.html` for the preserved two-flow comparison with SigLIP2 and Grounding DINO. Both pages share the static client code and are served by FastAPI without a Node.js build step.
+Open `http://127.0.0.1:8000/` for the Muse Spark investigation. It runs Muse Spark on the uploaded image, conditionally calls SAM 3.1, then reassesses selected regions with Muse Spark. This page does not load or require trained model artifacts. Open `http://127.0.0.1:8000/compare.html` for the two-flow comparison with DINOv3. Both pages share the static client code and are served by FastAPI without a Node.js build step.
 
 ### Botanical investigation workspace
 
@@ -154,7 +151,7 @@ The main page offers three synthetic sample photos below the upload canvas. Sele
 
 The browser uses [Motion](https://motion.dev/) (MIT licensed) for spring-style thought bubbles, native Web Animations for three moving search circles, and a CSS sweep over the photograph while a scan is active. Motion loads from a pinned jsDelivr URL, with a native animation fallback; no Node.js build step, hosted fonts, or paid visual assets are required. The photo moves into the center of the investigation canvas when a scan starts. Actual SAM specimens float over the photo when masks arrive; the comparison report appears below the canvas as model results arrive. Scanning questions are investigation prompts, never inferred findings or estimated progress percentages. The sweep and search circles are decorative and do not claim to mark identified plants.
 
-The main page reads real events from `/api/flows/muse-stream`; the comparison page uses `/api/flows/compare-stream`. Both can emit `analyzing_scene`, `scene_analyzed`, optional `segmenting`, `segments_ready`, `identifying_regions`, individual `region_assessed` events, then `completed` or `error`. Only the comparison emits `trained_ready`. Its Muse Spark → SAM branch runs independently of the classifier → DINO branch, so real SAM crops can appear while DINO is still working; `completed` waits for both branches. After the complete payload arrives, the browser spends 1.8 seconds presenting the scan and specimen transition before rendering the final report; source-backed hazard warnings appear immediately. This presentation pause is skipped for reduced motion and never delays API processing. The ordinary JSON comparison endpoint remains available. Scene and regional events already include their synchronous local toxicity lookups, so the UI does not simulate a separate lookup delay. SAM selection thresholds, model prompts, caches, and the left-hand detector/classifier behavior are unchanged.
+The main page reads real events from `/api/flows/muse-stream`; the comparison page uses `/api/flows/compare-stream`. Both can emit `analyzing_scene`, `scene_analyzed`, optional `segmenting`, one `specimen_ready` event per selected SAM crop, `segments_ready`, `identifying_regions`, individual `region_assessed` events, then `completed` or `error`. Only the comparison emits `trained_ready`. SAM's image response must finish before masks can be selected; after that, each encoded crop is sent to the browser immediately instead of waiting for all selected crops. Its Muse Spark → SAM branch runs independently of the DINOv3 classifier, so real SAM crops can appear while DINOv3 is still working; `completed` waits for both branches. After the complete payload arrives, the browser spends 1.8 seconds presenting the scan and specimen transition before rendering the final report; source-backed hazard warnings appear immediately. This presentation pause is skipped for reduced motion and never delays API processing. The ordinary JSON comparison endpoint remains available. Scene and regional events already include their synchronous local toxicity lookups, so the UI does not simulate a separate lookup delay.
 
 Selected transparent SAM crops animate from their real image bounds into movable specimen cards over the photo. Drag a card or use arrow keys to rearrange it within the canvas. Hover, focus, or drag a specimen to highlight its original mask and connecting line; select it for identification details, uncertainty, and source links. Only selected masks are sent to the browser; the existing filter counts describe omitted masks. Raw Meta responses and token/cache statistics remain available in the reports. Warnings appear when evidence arrives, independently of animations.
 
@@ -168,7 +165,7 @@ node --test tests/web-investigation.test.mjs
 
 For a browser smoke check with the API running: upload a single plant and select **Skip segmentation**, then a mixed scene with **Always segment**. Confirm that the photo centers during scanning, results appear below it, real crops float over the photo, cards can be dragged or moved with arrow keys, and source lines follow the right locations. Open a crop in the inspection dialog. Also check **Automatic**, a no-plant image, unavailable/empty SAM results, a follow-up upload while inference is pending, a narrow mobile viewport, and the operating system's reduced-motion setting. No API results are simulated in the production client.
 
-`PETSAFE_RUNS_DIR` should point to the run root, with model subdirectories directly beneath it. For example, the notebook writes `.../runs/plant_export_v20261026_2355546_holdout10_seed42/siglip2/best_head.pt`. Make the notebook's Google Drive run folder available to the API process by mounting that drive or copying the run artifacts to a local folder. SigLIP2 is the only active pretrained classifier.
+`PETSAFE_RUNS_DIR` should point to the run root, with model subdirectories directly beneath it. For example, the notebook writes `.../runs/plant_export_v20261026_2355546_holdout10_seed42/dinov3/best_head.pt`. Make the notebook's Google Drive run folder available to the API process by mounting that drive or copying the run artifacts to a local folder. DINOv3 ViT-S/16 is the only active trained classifier.
 
 ### Endpoints
 
@@ -176,7 +173,7 @@ For a browser smoke check with the API running: upload a single plant and select
 |---|---|
 | `GET /healthz` | API status and whether trained artifacts are discoverable |
 | `GET /api/models` | Supported model names and those with artifacts installed |
-| `POST /api/flows/trained` | Full-image and per-flower trained model predictions, Grounding DINO boxes, and local toxicity-reference lookups; multipart fields `image_file` and optional `model_name` |
+| `POST /api/flows/trained` | DINOv3 full-image prediction and local toxicity-reference lookup; multipart fields `image_file` and optional `model_name` |
 | `POST /api/flows/muse-spark` | Muse Spark JSON assessment and local toxicity-reference lookup on the uploaded image |
 | `POST /api/flows/muse-stream` | Muse Spark scene assessment, conditional SAM, regional reassessment, and SSE progress; no classifier artifacts required |
 | `POST /api/flows/compare` | Run both sides together, conditionally call SAM, reassess each segment with Muse Spark, and look up each returned identity |
@@ -187,10 +184,12 @@ Open `http://127.0.0.1:8000/docs` for the interactive API schema. Example compar
 ```bash
 curl -X POST http://127.0.0.1:8000/api/flows/compare \
   -F "image_file=@plant.jpg" \
-  -F "model_name=siglip2"
+  -F "model_name=dinov3"
 ```
 
 The comparison endpoint requests SAM when Muse Spark suggests segmentation, reports multiple distinct plant types, marks a bouquet mixed or uncertain, or marks a low-confidence group as needing inspection. Multiple flowers of one plant type alone do not trigger SAM. Spark also returns a structured `segmentation_target` and `segmentation_target_reason`: `flower` for flower heads or `plant` for whole plants. With the default `sam_prompt=auto`, that target is sent to SAM when segmentation runs; `sam_prompt=flower` or `sam_prompt=plant` overrides it manually. The corresponding SAM concept prompts are `flower head` and `plant`. Use `force_sam=true` or `skip_sam=true` to override the segmentation decision. After SAM, the API drops tiny or unreadable masks, removes near-duplicates using mask overlap, and selects up to six diverse regions before re-assessing them with Spark. The response reports the actual SAM prompt, mask counts before and after filtering, and the chosen target. If no useful region remains, the full-scene assessment is retained and an uncertain scene can request another photo. Spark returns plant groups, bouquet status, additional-photo guidance, and Meta prompt-cache token usage (`cached_input_tokens` and `cache_hit_ratio`). A toxicity lookup accompanies each plant group and includes reference links. Classifier probabilities are not calibrated confidence scores. The local result cache is separate from Meta's prompt cache; on a local cache hit, displayed token usage describes the original Meta request.
+
+When Muse Spark reports more than 8 clearly separate whole plants, both Muse flows skip SAM and request closer photos of individual plants, even if Muse Spark did not request another photo. Set `PETSAFE_MAX_SEPARATE_PLANTS` in `.env` to change the limit; for example, `8` requests a new photo for 9 or more separate plants. This count includes separate pots of the same species, but excludes individual flowers and cut-flower bouquets. It is a model estimate and can be wrong. The limit also applies when SAM is manually forced. Recreate the API container after changing the setting: `docker compose up -d --force-recreate --no-deps api`.
 
 The API accepts images up to 12 MB, normalizes the longest side to 2,048 pixels, and sends the normalized image to the selected Meta services. Keep the server private while it can make paid Model API calls; this initial API has no user authentication or rate limiting.
 
@@ -255,7 +254,7 @@ This repository distinguishes work developed during the hackathon from existing 
 ### Pre-existing or External Resources
 
 - Original plant photographs and source archive.
-- Pretrained SigLIP2 weights used by the active classifier. EfficientNet-B2 and DINOv3 appear only as historical experiment baselines.
+- Pretrained Meta DINOv3 ViT-S/16 weights used by the active classifier. EfficientNet-B2 and SigLIP2 appear only in historical experiment records.
 - PyTorch, torchvision, Hugging Face libraries, and other dependencies.
 - Meta's models and inference services.
 - Earlier classifier experiments used as background research.

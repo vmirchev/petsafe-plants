@@ -1,5 +1,6 @@
 import {
   createInvestigationState,
+  largestSpecimenIds,
   readPipelineEvents,
 } from "./investigation.mjs";
 
@@ -28,10 +29,18 @@ const els = {
   uploadSubtitle: byId("upload-subtitle"),
   preview: byId("image-preview"),
   backdrop: byId("image-backdrop"),
-  flowerBoxes: byId("flower-boxes"),
   scanField: byId("scan-field"),
   questionLayer: byId("question-layer"),
   scanMessage: byId("scan-message"),
+  photoGuidance: byId("photo-guidance"),
+  photoGuidanceHeading: byId("photo-guidance-heading"),
+  photoGuidanceCount: byId("photo-guidance-count"),
+  photoGuidanceInstructions: byId("photo-guidance-instructions"),
+  photoGuidanceWhy: byId("photo-guidance-why"),
+  photoGuidanceReason: byId("photo-guidance-reason"),
+  photoGuidancePending: byId("photo-guidance-pending"),
+  photoGuidanceButton: byId("photo-guidance-button"),
+  photoGuidanceRestore: byId("photo-guidance-restore"),
   workspaceStepLabel: byId("workspace-step-label"),
   expandCanvas: byId("expand-canvas"),
   fullscreenCanvas: byId("fullscreen-canvas"),
@@ -60,7 +69,7 @@ const els = {
 
 let selectedFile = null;
 let previewUrl = null;
-let visibleFlowerDetections = null;
+let maxSeparatePlants = 8;
 const apiDefault = (() => {
   const { protocol, hostname, port, origin } = window.location;
   if (
@@ -107,9 +116,7 @@ async function loadModels() {
     const previous = els.model.value;
     els.model.replaceChildren();
     const labels = {
-      efficientnet_b2: "EfficientNet-B2",
-      dinov3: "DINOv3",
-      siglip2: "SigLIP2",
+      dinov3: "Meta DINOv3 ViT-S/16",
     };
     for (const name of data.available) {
       const option = document.createElement("option");
@@ -153,8 +160,6 @@ function setFile(file) {
   cancelInvestigation();
   resetReport();
   selectedFile = file;
-  visibleFlowerDetections = null;
-  els.flowerBoxes.replaceChildren();
   if (previewUrl) URL.revokeObjectURL(previewUrl);
   previewUrl = URL.createObjectURL(file);
   els.imageStage.classList.remove("acquired");
@@ -185,7 +190,6 @@ function clearFile() {
   cancelInvestigation();
   resetReport();
   selectedFile = null;
-  visibleFlowerDetections = null;
   els.imageInput.value = "";
   if (previewUrl) URL.revokeObjectURL(previewUrl);
   previewUrl = null;
@@ -193,7 +197,6 @@ function clearFile() {
   els.backdrop.removeAttribute("src");
   els.backdrop.hidden = true;
   els.preview.hidden = true;
-  els.flowerBoxes.replaceChildren();
   els.uploadEmpty.hidden = false;
   els.imageStage.hidden = true;
   els.dropzone.classList.remove("has-image", "is-scanning");
@@ -267,8 +270,8 @@ function percent(value) {
   return `${(Number(value) * 100).toFixed(1)}%`;
 }
 
-function animalStatusRow(lookup, onSelect = null) {
-  const row = element("div", "animal-statuses");
+function animalStatusRow(lookup, onSelect = null, tagName = "div") {
+  const row = element(tagName, "animal-statuses");
   for (const [animal, record] of [["Cats", lookup], ["Dogs", lookup?.dog_toxicity]]) {
     const status = record?.toxicity_status;
     const potential = record?.potential_hazard;
@@ -281,7 +284,7 @@ function animalStatusRow(lookup, onSelect = null) {
       `animal-status ${tone}`, `${animal} · ${label}`);
     if (onSelect) {
       badge.type = "button";
-      badge.addEventListener("click", () => onSelect(animal, badge));
+      badge.addEventListener("click", (event) => onSelect(animal, badge, event));
     }
     row.append(badge);
   }
@@ -475,30 +478,7 @@ function renderRawMetaResponse(container, result) {
   container.append(details);
 }
 
-function renderFlowerBoxes(detections, sourceWidth, sourceHeight) {
-  visibleFlowerDetections = { detections, sourceWidth, sourceHeight };
-  els.flowerBoxes.replaceChildren();
-  if (!sourceWidth || !sourceHeight) return;
-  const stage = els.imageStage.getBoundingClientRect();
-  const scale = Math.min(
-    stage.width / sourceWidth,
-    stage.height / sourceHeight,
-  );
-  const offsetX = (stage.width - sourceWidth * scale) / 2;
-  const offsetY = (stage.height - sourceHeight * scale) / 2;
-  detections.forEach((item, index) => {
-    const [left, top, right, bottom] = item.bounds;
-    const box = element("div", "flower-box");
-    box.style.left = `${offsetX + left * scale}px`;
-    box.style.top = `${offsetY + top * scale}px`;
-    box.style.width = `${(right - left) * scale}px`;
-    box.style.height = `${(bottom - top) * scale}px`;
-    box.append(element("span", "", `${index + 1} · ${item.predicted_class}`));
-    els.flowerBoxes.append(box);
-  });
-}
-
-function renderTrained(result, sourceWidth, sourceHeight) {
+function renderTrained(result) {
   els.trainedResult.replaceChildren();
   const primary = element("div", "prediction-primary");
   primary.append(
@@ -506,21 +486,13 @@ function renderTrained(result, sourceWidth, sourceHeight) {
     element("span", "confidence-value", percent(result.confidence)),
   );
   els.trainedResult.append(primary);
-  els.trainedResult.append(
-    element(
-      "p",
-      "confidence-caption",
-      "Top class probability · not calibrated confidence",
-    ),
-  );
+  els.trainedResult.append(element("p", "confidence-caption",
+    "Top class probability · not calibrated confidence"));
   els.trainedResult.append(animalStatusRow(result.toxicity));
-  renderToxicity(
-    els.trainedResult,
-    result,
-    "Reference for the classifier’s top class; the prediction may be wrong.",
-  );
+  renderToxicity(els.trainedResult, result,
+    "Reference for the classifier’s top class; the prediction may be wrong.");
   const classifierDetails = element("details", "result-details");
-  classifierDetails.append(element("summary", "", `Prediction details · ${result.detections?.length || 0} flower crops`));
+  classifierDetails.append(element("summary", "", "Top class probabilities"));
   renderCacheNote(classifierDetails, result.cache_hit);
   const scores = element("div", "score-list");
   for (const item of result.top_predictions || []) {
@@ -530,77 +502,22 @@ function renderTrained(result, sourceWidth, sourceHeight) {
     const fill = element("span", "score-fill");
     fill.style.width = `${Math.max(0, Math.min(100, Number(item.probability) * 100))}%`;
     track.append(fill);
-    row.append(
-      name,
-      track,
-      element("span", "score-percent", percent(item.probability)),
-    );
+    row.append(name, track, element("span", "score-percent", percent(item.probability)));
     scores.append(row);
   }
   classifierDetails.append(scores);
-  const heading = element("div", "detection-heading");
-  heading.append(
-    element(
-      "strong",
-      "",
-      `Individual flower checks · ${result.detections?.length || 0}`,
-    ),
-  );
-  classifierDetails.append(heading);
-  if (result.detection_status === "failed") {
-    classifierDetails.append(
-      element(
-        "p",
-        "segment-notes",
-        `Flower detection unavailable: ${result.detection_error || "unknown error"}`,
-      ),
-    );
-  } else if (result.detection_status === "no_flowers") {
-    classifierDetails.append(
-      element(
-        "p",
-        "segment-notes",
-        "No flower boxes passed the detector threshold. The full-image prediction is shown above.",
-      ),
-    );
-  }
-  const grid = element("div", "flower-crop-grid");
-  for (const [index, item] of (result.detections || []).entries()) {
-    const card = element("article", "flower-crop");
-    const image = element("img", "flower-crop-image");
-    image.src = item.crop_data_url;
-    image.alt = `Detected flower ${index + 1}`;
-    card.append(image);
-    const details = element("div", "flower-crop-details");
-    details.append(
-      element(
-        "span",
-        "segment-label",
-        `FLOWER ${index + 1} · DETECTION ${percent(item.detector_score)}`,
-      ),
-    );
-    details.append(element("strong", "", item.predicted_class));
-    details.append(
-      element(
-        "span",
-        "confidence-value",
-        `Classifier ${percent(item.confidence)}`,
-      ),
-    );
-    renderToxicity(
-      details,
-      item,
-      "Reference for this crop prediction; verify the plant identity.",
-    );
-    card.append(details);
-    grid.append(card);
-  }
-  classifierDetails.append(grid);
   els.trainedResult.append(classifierDetails);
-  renderFlowerBoxes(result.detections || [], sourceWidth, sourceHeight);
 }
 
 function renderSpark(result) {
+  const openGroups = new Map([...els.sparkResult.querySelectorAll(".plant-group")].map((card) => [
+    card.id,
+    {
+      open: card.open,
+      cats: card.querySelector(".scene-cat-evidence")?.open,
+      dogs: card.querySelector(".scene-dog-evidence")?.open,
+    },
+  ]));
   els.sparkResult.replaceChildren();
   if (result.plant_groups?.length)
     els.sparkResult.append(element("p", "scene-summary-line",
@@ -615,17 +532,45 @@ function renderSpark(result) {
       element("span", "plant-scientific", group.scientific_name || "Identity unresolved"),
       element("span", "mini-tag", `${group.identification_confidence} confidence`),
     );
-    heading.append(animalStatusRow(group.toxicity));
     card.append(heading);
     if (group.visual_evidence?.length)
       card.append(
         element("p", "spark-evidence", group.visual_evidence.join(" · ")),
       );
-    renderToxicity(
+    const evidence = renderToxicity(
       card,
       group,
       "Reference for this visual hypothesis; verify the plant identity.",
+      null,
+      true,
     );
+    evidence.cats.classList.add("scene-cat-evidence");
+    evidence.dogs.classList.add("scene-dog-evidence");
+    const badges = animalStatusRow(group.toxicity, (animal, badge, event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      card.open = true;
+      const selected = animal === "Cats" ? evidence.cats : evidence.dogs;
+      const other = animal === "Cats" ? evidence.dogs : evidence.cats;
+      other.open = false;
+      selected.open = true;
+      selected.scrollIntoView({ block: "nearest" });
+    }, "span");
+    for (const [badge, target] of [[badges.children[0], evidence.cats], [badges.children[1], evidence.dogs]]) {
+      target.id = `scene-evidence-${index}-${target === evidence.cats ? "cats" : "dogs"}`;
+      badge.setAttribute("aria-controls", target.id);
+      badge.setAttribute("aria-expanded", String(target.open));
+      target.addEventListener("toggle", () => badge.setAttribute("aria-expanded", String(target.open)));
+    }
+    heading.append(badges);
+    const previous = openGroups.get(card.id);
+    if (previous) {
+      card.open = previous.open;
+      evidence.cats.open = Boolean(previous.cats);
+      evidence.dogs.open = Boolean(previous.dogs);
+      badges.children[0].setAttribute("aria-expanded", String(evidence.cats.open));
+      badges.children[1].setAttribute("aria-expanded", String(evidence.dogs.open));
+    }
     if (group.needs_inspection)
       card.append(
         element("span", "decision-chip yes", "Closer inspection suggested"),
@@ -638,11 +583,13 @@ function renderSpark(result) {
     );
   if (result.another_photo_needed) {
     const link = element("a", "next-photo-link", "Another photo needed → See what to capture");
-    link.href = "#followup-panel";
+    link.href = "#photo-guidance";
     els.sparkResult.append(link);
   }
   const technical = element("details", "result-details technical-details");
   technical.append(element("summary", "", "Developer Inspector · model details"));
+  technical.append(element("p", "spark-evidence",
+    `Scene count · ${result.distinct_plant_count ?? "?"} distinct plant types · ${result.separate_plant_count ?? "missing"} separate whole plants. Closer-photo rule: more than ${maxSeparatePlants} separate plants.`));
   renderCacheNote(technical, result.cache_hit);
   renderSparkUsage(technical, result);
   renderRawMetaResponse(technical, result);
@@ -782,7 +729,6 @@ async function compare() {
   els.sparkResult.replaceChildren(
     element("p", "empty-state", "Awaiting the scene assessment…"),
   );
-  els.flowerBoxes.replaceChildren();
   els.results.hidden = true;
   els.segmentationPanel.hidden = true;
   clearError();
@@ -818,7 +764,8 @@ async function compare() {
           ...data.segmentation.segments.map((item) => item.assessment),
         ];
         updateSafety();
-        updateFollowup(data.muse_spark_flow);
+        const followupRequest = sceneAssessments.find((item) => item.another_photo_needed);
+        if (followupRequest) updateFollowup(followupRequest);
         setInvestigationState("presenting");
         await new Promise((resolve, reject) => {
           const abort = () => {
@@ -894,12 +841,28 @@ els.compare.addEventListener("click", () => {
 });
 els.rerunPhoto.addEventListener("click", compare);
 els.newPlant.addEventListener("click", chooseNewPlant);
+els.photoGuidanceButton.addEventListener("click", chooseNewPlant);
+byId("photo-guidance-minimize").addEventListener("click", () => {
+  followupMinimized = true;
+  els.photoGuidance.hidden = true;
+  els.photoGuidanceRestore.hidden = false;
+  syncFollowupProgress();
+  els.photoGuidanceRestore.focus();
+});
+els.photoGuidanceRestore.addEventListener("click", () => {
+  followupMinimized = false;
+  summaryPanelOpen = false;
+  els.photoGuidanceRestore.hidden = true;
+  els.photoGuidance.hidden = false;
+  syncFollowupProgress();
+  byId("photo-guidance-minimize").focus();
+});
+byId("photo-guidance-summary").addEventListener("click", showSummaryPanel);
+byId("scene-summary-action").addEventListener("click", showSummaryPanel);
+byId("scene-card-restore").addEventListener("click", showSummaryPanel);
 els.dialogNewPlant.addEventListener("click", () => {
   byId("specimen-dialog").close();
   chooseNewPlant();
-});
-byId("scene-card").addEventListener("click", () => {
-  inspectScene();
 });
 byId("clear-results").addEventListener("click", () => {
   cancelInvestigation();
@@ -943,10 +906,6 @@ function refreshCanvasGeometry() {
   clearSpecimenMotion();
   placeSpecimens();
   positionSceneCardLink();
-  if (visibleFlowerDetections) {
-    const { detections, sourceWidth, sourceHeight } = visibleFlowerDetections;
-    renderFlowerBoxes(detections, sourceWidth, sourceHeight);
-  }
 }
 function setCanvasExpanded(expanded) {
   if (els.workspace.classList.contains("is-expanded") === expanded) return;
@@ -988,6 +947,12 @@ let questionIndex = 0;
 const toxicityOpinionRequests = new Set();
 let specimenPreviewTimer = null;
 let sceneAssessments = [];
+let summaryPanelOpen = false;
+let sceneCardMinimized = false;
+let followupMinimized = false;
+let followupAnnounced = false;
+let samResponded = false;
+let selectedRegionCount = 0;
 let lastReport = null;
 let sourceDimensions = { width: 1, height: 1 };
 let inspectedSpecimen = null;
@@ -1044,7 +1009,11 @@ function shuffledQuestionOrder(previousLast) {
 }
 let questionOrder = [...questions];
 const thoughtPositions = ["thought-one", "thought-two", "thought-three"];
+const guidedThoughtPositions = ["thought-guided-one", "thought-guided-two", "thought-guided-three"];
+const QUESTION_INTERVAL_MS = 4000;
+const GUIDED_QUESTION_INTERVAL_MS = 5200;
 let thoughtSerial = 0;
+let questionMode = null;
 let layoutAnimation = null;
 function centerPhotoWorkspace(state, keepCentered = false) {
   const centered = Boolean(selectedFile && (keepCentered || !["idle"].includes(state)));
@@ -1121,10 +1090,17 @@ function animateThought(node, entering) {
 }
 function showNextThought() {
   if (!els.dropzone.classList.contains("is-scanning")) return;
-  const position = thoughtSerial % thoughtPositions.length;
+  const guided = questionMode === "guided";
+  const positions = guided
+    ? guidedThoughtPositions.slice(0, window.matchMedia("(max-width: 600px)").matches ? 2 : 3)
+    : thoughtPositions;
+  const position = thoughtSerial % positions.length;
   const old = els.questionLayer.querySelector(`[data-position="${position}"]`);
-  if (old) animateThought(old, false).finally(() => old.remove());
-  const bubble = element("span", `thought-bubble ${thoughtPositions[position]}`, questionOrder[questionIndex]);
+  if (old) {
+    if (guided) old.remove();
+    else animateThought(old, false).finally(() => old.remove());
+  }
+  const bubble = element("span", `thought-bubble ${positions[position]}`, questionOrder[questionIndex]);
   bubble.dataset.position = String(position);
   bubble.style.opacity = motionDisabled() ? "1" : "0";
   els.questionLayer.append(bubble);
@@ -1141,6 +1117,7 @@ function clearThoughts() {
   questionTimer = null;
   els.questionLayer.replaceChildren();
   thoughtSerial = 0;
+  questionMode = null;
 }
 function syncInvestigationActions() {
   const busy = machine.busy;
@@ -1157,18 +1134,81 @@ function syncInvestigationActions() {
       : investigationState === "error" ? "Retry this photo"
         : selectedFile ? "Investigate this photo" : "Begin investigation";
 }
+const followupProgressNote = "More findings from this photo may help with your next shot.";
+function syncFollowupProgress() {
+  const ongoing = machine.busy && investigationState !== "presenting";
+  els.photoGuidancePending.hidden = !ongoing || els.photoGuidance.hidden;
+  els.photoGuidanceRestore.textContent = ongoing
+    ? "Next photo · scan continues ↗" : "Next photo requested ↗";
+  if (ongoing && !els.photoGuidance.hidden &&
+      !els.progressDetail.textContent.includes(followupProgressNote))
+    els.progressDetail.textContent = [els.progressDetail.textContent, followupProgressNote]
+      .filter(Boolean).join(" ");
+}
+function syncRegionProgress() {
+  const panel = byId("region-progress");
+  const visible = machine.busy && sceneAssessments.length > 0 &&
+    !summaryPanelOpen && els.photoGuidance.hidden && els.photoGuidanceRestore.hidden;
+  panel.hidden = !visible;
+  if (!visible) return;
+  const selected = Math.max(selectedRegionCount, specimenRecords.size);
+  const assessed = [...specimenRecords.values()].filter((item) => item.data?.assessment).length;
+  byId("region-progress-title").textContent = investigationState === "presenting"
+    ? "Preparing the final findings"
+    : assessed
+    ? `${assessed} of ${selected} specimens checked`
+    : specimenRecords.size
+      ? `${specimenRecords.size} specimen${specimenRecords.size === 1 ? "" : "s"} found`
+      : investigationState === "segmenting" ? "Isolating plant regions" : "Scene assessment received";
+  byId("region-progress-detail").textContent = investigationState === "presenting"
+    ? "All available checks have returned. The investigation report is being prepared."
+    : assessed
+    ? "Muse Spark results are arriving for selected regions. The report will open when all checks finish."
+    : investigationState === "segmenting"
+      ? "SAM is finding useful regions. The report will open after regional checks finish."
+      : investigationState === "segments_ready"
+        ? "Regions are selected. Muse Spark will assess them next."
+        : investigationState === "identifying_regions"
+          ? "Muse Spark is checking the selected regions. The report will open when checks finish."
+          : "Checking whether this photo needs closer inspection. The report will open when checks finish.";
+}
+function syncEarlyHazard() {
+  const potentialHazard = sceneAssessments.some((assessment) =>
+    (assessment.plant_groups || []).some(inspectionHazard));
+  for (const id of ["region-progress-hazard", "photo-guidance-hazard"]) {
+    const warning = byId(id);
+    warning.hidden = !potentialHazard || investigationState === "completed";
+    warning.textContent = potentialHazard
+      ? "Possible pet hazard reported. Keep pets away until the plant identity is verified."
+      : "";
+  }
+}
+function syncFollowupSummaryAction() {
+  const available = followupAnnounced &&
+    (samResponded || investigationState === "completed");
+  const button = byId("photo-guidance-summary");
+  button.disabled = !available;
+  button.textContent = available
+    ? "View toxicity summary ↗"
+    : "Summary available when scan is ready";
+}
 function setInvestigationState(state, keepCentered = false) {
   if (!Object.hasOwn(stateTitles, state)) return;
   machine.transition(state);
   investigationState = machine.state;
   document.body.dataset.investigation = state;
   centerPhotoWorkspace(state, keepCentered);
+  const needsAnotherPhoto = sceneAssessments.some((item) => item.another_photo_needed);
   els.workspaceStepLabel.textContent = state === "idle"
     ? "ADD A PHOTO"
-    : state === "completed" ? "INVESTIGATION CANVAS · COMPLETE" : "LIVE INVESTIGATION";
-  els.scanMessage.textContent = stateTitles[state].toUpperCase();
+    : state === "completed" ? (needsAnotherPhoto
+      ? "NEXT PHOTO NEEDED" : "INVESTIGATION CANVAS · COMPLETE") : "LIVE INVESTIGATION";
+  els.scanMessage.textContent = state === "completed" && needsAnotherPhoto
+    ? "CLOSER PHOTO REQUESTED" : stateTitles[state].toUpperCase();
   els.progressTitle.textContent = stateTitles[state];
   const busy = machine.busy;
+  byId("scene-summary-action").disabled = state !== "completed";
+  syncFollowupSummaryAction();
   els.scanProgress.hidden = !busy;
   syncInvestigationActions();
   if (els.model) els.model.disabled = busy;
@@ -1181,19 +1221,28 @@ function setInvestigationState(state, keepCentered = false) {
     uploading: "Transferring your image. Visual search has begun; model findings will appear when returned.",
     analyzing_scene: "Looking for visual evidence in the photograph.",
     scene_analyzed: museOnly
-      ? "Scene evidence is available below. Checking whether regions need inspection."
-      : "Scene evidence is available below. The comparison is continuing.",
+      ? "Scene assessment received. Checking whether regions need inspection."
+      : "Scene assessment received. The comparison is continuing.",
     segmenting: "SAM is finding masks. Regions will appear when they arrive.",
     segments_ready: "These are actual selected SAM crops.",
     identifying_regions: "Each specimen receives its own visual assessment and local reference lookup.",
     presenting: "The analysis is complete. Arranging your report.",
   }[state] || "";
+  byId("followup-panel").hidden = state !== "completed" || !needsAnotherPhoto;
+  syncFollowupProgress();
+  syncRegionProgress();
+  syncEarlyHazard();
   const showQuestions = busy && !["segments_ready", "identifying_regions", "presenting"].includes(state)
-    && !els.workspace.classList.contains("has-specimens");
+    && !els.workspace.classList.contains("has-specimens") && els.photoGuidance.hidden;
   if (showQuestions) {
-    if (!questionTimer) {
+    const nextMode = byId("region-progress").hidden ? "free" : "guided";
+    if (!questionTimer || questionMode !== nextMode) {
+      clearThoughts();
+      questionMode = nextMode;
       showNextThought();
-      questionTimer = setInterval(showNextThought, 1650);
+      if (nextMode === "guided") showNextThought();
+      questionTimer = setInterval(showNextThought,
+        nextMode === "guided" ? GUIDED_QUESTION_INTERVAL_MS : QUESTION_INTERVAL_MS);
     }
   } else {
     clearThoughts();
@@ -1225,49 +1274,70 @@ function resetReport() {
   specimenPreviewTimer = null;
   resetOverview();
   sceneAssessments = [];
+  summaryPanelOpen = false;
+  sceneCardMinimized = false;
+  followupMinimized = false;
+  followupAnnounced = false;
+  samResponded = false;
+  selectedRegionCount = 0;
+  byId("region-progress").hidden = true;
   byId("scene-card").hidden = true;
+  byId("scene-card-restore").hidden = true;
   byId("scene-card-link").classList.remove("visible");
   lastReport = null;
   specimenRecords.clear();
   byId("specimen-rail").replaceChildren();
   document.querySelector(".workspace").classList.remove("has-specimens");
-  for (const id of ["specimen-workspace", "followup-panel", "safety-summary"])
+  for (const id of ["specimen-workspace", "followup-panel", "safety-summary", "photo-guidance"])
     byId(id).hidden = true;
+  els.photoGuidanceRestore.hidden = true;
+  byId("scene-summary-action").disabled = true;
+  els.photoGuidanceWhy.open = false;
+  els.photoGuidancePending.hidden = true;
   els.results.hidden = true;
-  visibleFlowerDetections = null;
-  els.flowerBoxes.replaceChildren();
   byId("specimen-dialog").close();
 }
 function handlePipelineEvent(event, data) {
   if (event === "error") throw new Error(data.message);
-  if (["scene_analyzed", "trained_ready", "completed"].includes(event))
+  if (event === "completed")
     els.results.hidden = false;
   if (event === "analyzing_scene")
     sourceDimensions = { width: data.image_width, height: data.image_height };
   if (event === "scene_analyzed") {
+    if (!Number.isInteger(data.separate_plant_count))
+      throw new Error("The running API uses an older Muse Spark response without a separate-plant count. Restart the API with: docker compose restart api, then retry this photo.");
+    if (!Number.isInteger(data.max_separate_plants) || data.max_separate_plants < 1)
+      throw new Error("The running API does not report the configured separate-plant limit. Restart the API with: docker compose up -d --force-recreate --no-deps api, then retry this photo.");
+    maxSeparatePlants = data.max_separate_plants;
     renderSpark(data);
     sceneAssessments = [data];
     updateSafety();
     updateFollowup(data);
   }
   if (event === "trained_ready" && !museOnly)
-    renderTrained(data, sourceDimensions.width, sourceDimensions.height);
+    renderTrained(data);
+  if (event === "specimen_ready") {
+    selectedRegionCount = Math.max(selectedRegionCount, data.selected_count || 0);
+    clearThoughts();
+    document.querySelector(".workspace").classList.add("has-specimens");
+    byId("specimen-workspace").hidden = false;
+    byId("specimen-count").textContent =
+      `${data.index} of ${data.selected_count} selected / ${data.mask_count} masks`;
+    addSpecimen(data.region);
+  }
   if (event === "segments_ready") {
-    byId("scene-card").hidden = true;
-    byId("scene-card-link").classList.remove("visible");
+    samResponded = true;
+    selectedRegionCount = data.regions.length;
     clearThoughts();
     document
       .querySelector(".workspace")
       .classList.toggle("has-specimens", data.regions.length > 0);
     byId("specimen-workspace").hidden = !data.regions.length;
-    byId("specimen-count").textContent =
-      `${data.regions.length} selected / ${data.mask_count} masks`;
-    if (visibleFlowerDetections) {
-      const { detections, sourceWidth, sourceHeight } = visibleFlowerDetections;
-      renderFlowerBoxes(detections, sourceWidth, sourceHeight);
-    }
     data.regions.forEach(addSpecimen);
-    if (data.regions.length) previewSpecimens(data.regions.map((region) => String(region.object_id)));
+    const featuredIds = largestSpecimenIds(data.regions);
+    featuredIds.forEach((id) => reopenSpecimenCard(id, { focus: false }));
+    updateSpecimenCardCount();
+    if (featuredIds.length) previewSpecimens(featuredIds);
   }
   if (event === "region_assessed") {
     const item = specimenRecords.get(String(data.object_id));
@@ -1294,6 +1364,11 @@ function handlePipelineEvent(event, data) {
         primary?.toxicity?.dog_toxicity?.toxicity_status === "toxic" ||
         primary?.toxicity?.dog_toxicity?.potential_hazard;
       item.button.classList.toggle("hazard", hazard);
+      item.reopenButton.classList.toggle("hazard", hazard);
+      item.reopenButton.setAttribute("aria-label",
+        `Open specimen ${item.displayIndex}: ${item.caption.textContent}. ${hazard ? "Potential pet hazard." : "Regional assessment available."}`);
+      if (hazard && item.closed && !item.userClosed)
+        reopenSpecimenCard(String(data.object_id), { focus: false });
       const nonToxic =
         groups.length &&
         groups.every(
@@ -1322,10 +1397,9 @@ function handlePipelineEvent(event, data) {
   }
   if (event === "completed") {
     lastReport = data;
-    if (!museOnly) renderTrained(data.trained_flow, data.image_width, data.image_height);
-    renderSpark(data.muse_spark_flow);
+    if (!museOnly) renderTrained(data.trained_flow);
+    if (!sceneAssessments.length) renderSpark(data.muse_spark_flow);
     renderSegmentation(data.segmentation);
-    if (!data.segmentation.segments?.length) showSceneCard(data.muse_spark_flow);
     sceneAssessments = [
       data.muse_spark_flow,
       ...Array.from(specimenRecords.values())
@@ -1337,13 +1411,19 @@ function handlePipelineEvent(event, data) {
       if (!item.data.assessment)
         item.status.textContent = "Assessment unavailable · see report";
     }
-    if (data.muse_spark_flow.another_photo_needed)
-      updateFollowup(data.muse_spark_flow);
+    const followupRequest = sceneAssessments.find((item) => item.another_photo_needed);
+    if (followupRequest) updateFollowup(followupRequest);
   }
   if (Object.hasOwn(stateTitles, event)) setInvestigationState(event);
+  if (event === "completed" && (summaryPanelOpen ||
+      els.photoGuidance.hidden && els.photoGuidanceRestore.hidden))
+    showSceneCard(data.muse_spark_flow);
   if (event === "segmenting" && data.prompt)
     els.progressDetail.textContent =
       `SAM is isolating ${data.prompt === "plant" ? "whole plants" : "flower heads"}. Regions will appear when they arrive.`;
+  syncFollowupProgress();
+  syncRegionProgress();
+  syncEarlyHazard();
   if (
     event === "completed" &&
     inspectedSpecimen &&
@@ -1390,15 +1470,93 @@ function positionSceneCardLink() {
 }
 function showSceneCard(assessment) {
   const card = byId("scene-card");
-  const groups = assessment.plant_groups || [];
-  const names = groups.map((group) => group.plant_identification).filter(Boolean);
+  const groups = [...(assessment.plant_groups || [])];
+  const hazards = groups.filter(inspectionHazard).length;
+  const isUnresolved = (group) => !group.toxicity ||
+    group.toxicity.toxicity_status === "unknown" ||
+    !group.toxicity.dog_toxicity ||
+    group.toxicity.dog_toxicity.toxicity_status === "unknown" ||
+    group.identification_confidence === "low" || group.needs_inspection;
+  const unresolved = groups.filter(isUnresolved).length;
+  card.dataset.tone = hazards ? "hazard" : unresolved ? "unknown" : "reference";
+  const list = element("ul", "scene-card-list");
+  list.tabIndex = 0;
+  list.setAttribute("aria-label", "Reported plant types and cat and dog toxicity statuses");
+  groups.sort((a, b) => Number(inspectionHazard(b)) - Number(inspectionHazard(a)) ||
+    Number(isUnresolved(b)) - Number(isUnresolved(a)));
+  for (const group of groups) {
+    const row = element("li", `scene-card-row${inspectionHazard(group) ? " hazard" : isUnresolved(group) ? " unknown" : ""}`);
+    const identity = element("div", "scene-card-identity");
+    identity.append(
+      element("span", "scene-card-name", group.plant_identification || "Unidentified plant"),
+      element("span", "scene-card-taxon", group.scientific_name || "Scientific identity unresolved"),
+    );
+    row.append(identity, animalStatusRow(group.toxicity));
+    list.append(row);
+  }
+  if (!groups.length)
+    list.append(element("li", "scene-card-empty", "No plant type identified; cat and dog toxicity remain unresolved."));
+  const actions = element("div", "scene-card-actions");
+  const minimize = element("button", "scene-card-minimize", "Minimize −");
+  minimize.type = "button";
+  minimize.setAttribute("aria-label", "Minimize whole-photo toxicity summary");
+  minimize.addEventListener("click", () => {
+    sceneCardMinimized = true;
+    card.hidden = true;
+    byId("scene-card-link").classList.remove("visible");
+    byId("scene-card-restore").hidden = false;
+    byId("scene-card-restore").focus();
+  });
+  const details = element("button", "scene-card-details", "See more details ↗");
+  details.type = "button";
+  details.addEventListener("click", () => showInspection(assessment, els.preview.src,
+    "Original plant photograph", "WHOLE PHOTO / MUSE SPARK"));
+  actions.append(details);
+  const hasFollowup = sceneAssessments.some((item) => item.another_photo_needed);
+  if (hasFollowup || !byId("specimen-workspace").hidden && machine.busy) {
+    const back = element("button", "scene-card-back", hasFollowup ? "← Next photo" : "← Continue inspection");
+    back.type = "button";
+    back.addEventListener("click", () => {
+      summaryPanelOpen = false;
+      sceneCardMinimized = false;
+      card.hidden = true;
+      byId("scene-card-restore").hidden = true;
+      byId("scene-card-link").classList.remove("visible");
+      els.photoGuidance.hidden = followupMinimized;
+      els.photoGuidanceRestore.hidden = !hasFollowup || !followupMinimized;
+      if (!hasFollowup) els.photoGuidance.hidden = true;
+      syncFollowupProgress();
+      syncRegionProgress();
+    });
+    actions.prepend(back);
+  }
   card.replaceChildren(
-    element("span", "eyebrow", "WHOLE PHOTO ASSESSMENT"),
-    element("strong", "", names.length ? names.slice(0, 2).join(" · ") : "No plant identified"),
-    element("small", "", `${assessment.distinct_plant_count ?? 0} distinct plant type(s) reported · Select for details`),
+    element("span", "eyebrow", "WHOLE PHOTO / TOXICITY SUMMARY"),
+    minimize,
+    element("strong", "", hazards
+      ? `${hazards} potential hazard match${hazards === 1 ? "" : "es"}`
+      : unresolved ? `${unresolved} unresolved plant match${unresolved === 1 ? "" : "es"}`
+        : groups.length ? "Cat and dog references ready" : "No plant identified"),
+    element("small", "", `${groups.length} reported plant type${groups.length === 1 ? "" : "s"} · ${unresolved} unresolved · ${machine.busy ? "whole-photo findings; regional checks continue" : "visual matches only"}`),
+    list,
+    actions,
   );
-  card.hidden = false;
-  requestAnimationFrame(positionSceneCardLink);
+  card.hidden = sceneCardMinimized;
+  byId("scene-card-restore").hidden = !sceneCardMinimized;
+  if (sceneCardMinimized) byId("scene-card-link").classList.remove("visible");
+  else requestAnimationFrame(positionSceneCardLink);
+}
+function showSummaryPanel() {
+  if (investigationState !== "completed" && !(followupAnnounced && samResponded)) return;
+  const assessment = lastReport?.muse_spark_flow || sceneAssessments[0];
+  if (!assessment) return;
+  summaryPanelOpen = true;
+  sceneCardMinimized = false;
+  els.photoGuidance.hidden = true;
+  els.photoGuidanceRestore.hidden = true;
+  byId("region-progress").hidden = true;
+  syncFollowupProgress();
+  showSceneCard(assessment);
 }
 function clampSpecimen(button, left, top) {
   const width = els.imageStage.clientWidth;
@@ -1546,31 +1704,45 @@ function enableSpecimenDrag(id, item) {
     highlightSpecimen(id);
   });
 }
+function updateSpecimenCardCount() {
+  if (!samResponded) return;
+  const open = [...specimenRecords.values()].filter((item) => !item.closed).length;
+  const marked = specimenRecords.size - open;
+  byId("specimen-count").textContent = marked
+    ? `${open} open · click ${marked} markers`
+    : `${open} open`;
+}
 function closeSpecimenCard(id) {
   const item = specimenRecords.get(id);
   if (!item) return;
   clearInterval(specimenPreviewTimer);
   specimenPreviewTimer = null;
   item.closed = true;
+  item.userClosed = true;
   item.button.hidden = true;
   item.closeButton.hidden = true;
   item.reopenButton.hidden = false;
   highlightSpecimen(null);
   placeSpecimens();
+  updateSpecimenCardCount();
   item.reopenButton.focus({ preventScroll: true });
 }
-function reopenSpecimenCard(id) {
+function reopenSpecimenCard(id, { focus = true } = {}) {
   const item = specimenRecords.get(id);
   if (!item?.closed) return;
   item.closed = false;
+  if (focus) item.userClosed = false;
   item.manual = false;
   item.positioned = false;
   item.button.hidden = false;
   item.closeButton.hidden = false;
   item.reopenButton.hidden = true;
   placeSpecimens();
-  highlightSpecimen(id);
-  item.button.focus();
+  updateSpecimenCardCount();
+  if (focus) {
+    highlightSpecimen(id);
+    item.button.focus();
+  }
 }
 function addSpecimen(data) {
   const id = String(data.object_id);
@@ -1599,11 +1771,13 @@ function addSpecimen(data) {
   closeButton.setAttribute("aria-label", `Close specimen ${displayIndex} card`);
   const reopenButton = element("button", "specimen-reopen", `+${displayIndex}`);
   reopenButton.type = "button";
-  reopenButton.hidden = true;
+  reopenButton.hidden = false;
   reopenButton.setAttribute("aria-label", `Reopen specimen ${displayIndex} card`);
   byId("specimen-rail").append(button, closeButton, reopenButton);
   const item = { data, displayIndex, button, closeButton, reopenButton, image, caption, taxon,
-    status, manual: false, closed: false, suppressClick: false };
+    status, manual: false, closed: true, userClosed: false, suppressClick: false };
+  button.hidden = true;
+  closeButton.hidden = true;
   closeButton.addEventListener("click", (event) => {
     event.stopPropagation();
     closeSpecimenCard(id);
@@ -1651,7 +1825,7 @@ function addSpecimen(data) {
   image.addEventListener(
     "load",
     () => {
-      if (motionDisabled() || !image.isConnected) return;
+      if (motionDisabled() || !image.isConnected || item.closed) return;
       const start = sourceBox(data.bounds);
       const stage = els.imageStage.getBoundingClientRect();
       const ratioX = stage.width / els.imageStage.clientWidth;
@@ -1737,11 +1911,24 @@ function highlightSpecimen(id) {
   const ratioX = stage.width / els.imageStage.clientWidth;
   const ratioY = stage.height / els.imageStage.clientHeight;
   const target = item.button.getBoundingClientRect();
-  const line = connection.querySelector("line");
-  line.setAttribute("x1", stage.left + (box.left + box.width / 2) * ratioX);
-  line.setAttribute("y1", stage.top + (box.top + box.height / 2) * ratioY);
-  line.setAttribute("x2", target.left + target.width / 2);
-  line.setAttribute("y2", target.top + 20);
+  connection.setAttribute("viewBox", `0 0 ${els.imageStage.clientWidth} ${els.imageStage.clientHeight}`);
+  connection.setAttribute("preserveAspectRatio", "none");
+  const startX = box.left + box.width / 2;
+  const startY = box.top + box.height / 2;
+  const endX = (target.left + target.width / 2 - stage.left) / ratioX;
+  const endY = (target.top + 20 - stage.top) / ratioY;
+  connection.querySelectorAll("line").forEach((line) => {
+    line.setAttribute("x1", startX);
+    line.setAttribute("y1", startY);
+    line.setAttribute("x2", endX);
+    line.setAttribute("y2", endY);
+  });
+  const origin = connection.querySelector(".connection-origin");
+  origin.setAttribute("cx", startX);
+  origin.setAttribute("cy", startY);
+  const end = connection.querySelector(".connection-end");
+  end.setAttribute("cx", endX);
+  end.setAttribute("cy", endY);
   connection.style.display = "block";
 }
 function specimenAtPhotoPoint(event, closedOnly = false) {
@@ -1906,7 +2093,18 @@ function showInspection(assessment, imageUrl, imageAlt, heading, pendingMessage)
   toxicityOpinionRequests.clear();
   inspectionEvidenceSerial = 0;
   const panel = byId("specimen-detail");
+  const wholePhoto = heading === "WHOLE PHOTO / MUSE SPARK";
+  byId("specimen-dialog").dataset.view = wholePhoto ? "scene-detail" : "specimen";
   panel.replaceChildren(element("p", "eyebrow", heading));
+  if (wholePhoto) {
+    const back = element("button", "scene-summary-back", "← Toxicity summary panel");
+    back.type = "button";
+    back.addEventListener("click", () => {
+      byId("specimen-dialog").close();
+      showSummaryPanel();
+    });
+    panel.append(back);
+  }
   const top = element("div", "inspection-top");
   const image = element("img", "inspection-image");
   image.src = imageUrl;
@@ -1940,19 +2138,24 @@ function showInspection(assessment, imageUrl, imageAlt, heading, pendingMessage)
       others.forEach((group) => more.append(renderInspectionGroup(group, false, 1, imageUrl)));
       panel.append(more);
     }
-    if (assessment.another_photo_needed)
-      panel.append(element("p", "inspection-followup",
-        assessment.photo_instructions || assessment.photo_reason ||
-        "Another photo is needed for a closer assessment."));
+    if (assessment.another_photo_needed) {
+      const followup = element("section", "inspection-followup");
+      followup.append(element("h3", "", "A closer photo would help"));
+      if (assessment.photo_reason)
+        followup.append(element("p", "inspection-followup-reason", assessment.photo_reason));
+      followup.append(element("p", "", assessment.photo_instructions ||
+        "Photograph one plant more closely, including its leaves and stem."));
+      const upload = element("button", "inspection-followup-button", "Upload a follow-up photo ↗");
+      upload.type = "button";
+      upload.addEventListener("click", () => {
+        byId("specimen-dialog").close();
+        chooseNewPlant();
+      });
+      followup.append(upload);
+      panel.append(followup);
+    }
   }
   if (!byId("specimen-dialog").open) byId("specimen-dialog").showModal();
-}
-function inspectScene() {
-  const assessment = lastReport?.muse_spark_flow || sceneAssessments[0];
-  if (!assessment || !selectedFile) return;
-  inspectedSpecimen = null;
-  showInspection(assessment, els.preview.src, "Original plant photograph",
-    "WHOLE PHOTO / MUSE SPARK");
 }
 function inspectSpecimen(id) {
   const item = specimenRecords.get(id);
@@ -2050,15 +2253,40 @@ function updateSafety() {
 }
 function updateFollowup(assessment) {
   if (!assessment.another_photo_needed) return;
-  byId("followup-panel").hidden = false;
-  const instructions = [
-    ...new Set(
-      [...sceneAssessments, assessment]
-        .filter((item) => item.another_photo_needed)
-        .map((item) => item.photo_instructions || item.photo_reason)
-        .filter(Boolean),
-    ),
-  ];
+  followupAnnounced = true;
+  syncFollowupSummaryAction();
+  const requests = [...new Set([...sceneAssessments, assessment])]
+    .filter((item) => item?.another_photo_needed);
+  const crowdedScene = requests.some((item) => item.separate_plant_count > maxSeparatePlants);
+  const instructions = [...new Set(requests
+    .map((item) => item.photo_instructions)
+    .filter(Boolean))];
+  const reasons = [...new Set(requests.map((item) => item.photo_reason).filter(Boolean))];
+  els.photoGuidanceHeading.textContent = crowdedScene
+    ? "One plant at a time." : "Show this plant clearly.";
+  els.photoGuidanceCount.hidden = !crowdedScene && requests.length === 1;
+  els.photoGuidanceCount.textContent = crowdedScene
+    ? `${requests.find((item) => item.separate_plant_count > maxSeparatePlants).separate_plant_count} separate plants reported in this photo`
+    : requests.length > 1 ? "Several plant views need another photo."
+      : "";
+  els.photoGuidanceInstructions.replaceChildren(
+    ...(instructions.length ? instructions : [
+      "Take a closer photo of one plant with its leaves and stem visible.",
+    ]).map((instruction) => element("li", "", instruction)),
+  );
+  els.photoGuidanceInstructions.classList.toggle("single-instruction", instructions.length <= 1);
+  els.photoGuidanceWhy.hidden = reasons.length === 0;
+  els.photoGuidanceReason.textContent = reasons.join(" ");
+  els.photoGuidance.hidden = summaryPanelOpen || followupMinimized;
+  els.photoGuidanceRestore.hidden = summaryPanelOpen || !followupMinimized;
+  byId("region-progress").hidden = true;
+  syncFollowupProgress();
+  if (summaryPanelOpen) showSceneCard(sceneAssessments[0] || assessment);
+  else {
+    byId("scene-card").hidden = true;
+    byId("scene-card-link").classList.remove("visible");
+  }
+  byId("followup-panel").hidden = investigationState !== "completed";
   byId("followup-instructions").textContent =
     instructions.join(" ") ||
     "More photographic evidence is needed to resolve this investigation.";

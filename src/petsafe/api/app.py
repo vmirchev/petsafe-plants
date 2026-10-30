@@ -21,6 +21,7 @@ from petsafe.api.schemas import (
 )
 from petsafe.api.services import (
     MAX_UPLOAD_BYTES,
+    MAX_SEPARATE_PLANTS,
     MODEL_NAMES,
     RUNS_DIR,
     ProgressCallback,
@@ -36,7 +37,7 @@ app = FastAPI(
     title="PetSafe Plants Inference API",
     version="0.1.0",
     description=(
-        "Compare local classifier plus Grounding DINO crops with the separate Muse Spark "
+        "Compare a local DINOv3 classifier with the separate Muse Spark "
         "plus optional SAM 3.1 flow, then attach source-backed toxicity lookups. "
         "Results are experimental and are not veterinary advice."
     ),
@@ -54,9 +55,13 @@ app.add_middleware(
 
 
 @app.get("/healthz")
-async def health() -> dict[str, str]:
+async def health() -> dict[str, str | int]:
     """Report service readiness without exposing credentials."""
-    return {"status": "ok", "trained_artifacts": "available" if available_models() else "missing"}
+    return {
+        "status": "ok",
+        "trained_artifacts": "available" if available_models() else "missing",
+        "max_separate_plants": MAX_SEPARATE_PLANTS,
+    }
 
 
 @app.get("/api/models")
@@ -91,7 +96,7 @@ def _model_name(value: str) -> str:
 @app.post("/api/flows/trained")
 async def trained_flow(
     image_file: UploadFile = File(...),
-    model_name: str = Form("siglip2"),
+    model_name: str = Form("dinov3"),
 ) -> TrainedPrediction:
     """Run one selected notebook 03 classifier and return its top classes."""
     name = _model_name(model_name)
@@ -135,12 +140,12 @@ async def muse_toxicity_opinion(
 @app.post("/api/flows/compare", response_model=CompareResponse)
 async def compare_flows(
     image_file: UploadFile = File(...),
-    model_name: str = Form("siglip2"),
+    model_name: str = Form("dinov3"),
     force_sam: bool = Form(False),
     skip_sam: bool = Form(False),
     sam_prompt: str = Form("auto"),
 ) -> CompareResponse:
-    """Run local detector/classifier and separate Muse Spark/SAM flows."""
+    """Run the DINOv3 classifier and separate Muse Spark/SAM flows."""
     if force_sam and skip_sam:
         raise HTTPException(status_code=422, detail="force_sam and skip_sam cannot both be true.")
     if sam_prompt not in {"auto", "flower", "plant"}:
@@ -177,7 +182,7 @@ async def _run_comparison(
         )
 
     # SAM can reveal specimens as soon as Muse Spark has assessed the scene.
-    # The independent classifier/DINO path may still be running.
+    # The independent DINOv3 classifier path may still be running.
     tasks = [asyncio.create_task(classifier()), asyncio.create_task(muse_path())]
     try:
         trained, (spark, segmentation) = await asyncio.gather(*tasks)
@@ -209,7 +214,34 @@ async def _run_muse_path(
 ) -> tuple[PlantAssessment, SegmentationResult]:
     """Assess the scene and selected SAM regions without requiring a classifier."""
     spark = await assess_with_spark(normalized)
-    await publish("scene_analyzed", spark.model_dump(mode="json"))
+    if spark.separate_plant_count > MAX_SEPARATE_PLANTS:
+        reason = (
+            f"Muse Spark reported {spark.separate_plant_count} separate plants "
+            "in this photo. Inspect one plant at a time in closer photos."
+        )
+        spark = spark.model_copy(update={
+            "suggest_segmentation": False,
+            "segmentation_reason": reason,
+            "another_photo_needed": True,
+            "photo_instructions": (
+                "Take a closer, sharp photo of one individual plant, including its flowers, "
+                "leaves, and stem. Repeat for the other plants."
+            ),
+            "photo_reason": reason,
+        })
+        await publish("scene_analyzed", {
+            **spark.model_dump(mode="json"),
+            "max_separate_plants": MAX_SEPARATE_PLANTS,
+        })
+        return spark, SegmentationResult(
+            ran=False,
+            status="skipped",
+            reason=[reason],
+        )
+    await publish("scene_analyzed", {
+        **spark.model_dump(mode="json"),
+        "max_separate_plants": MAX_SEPARATE_PLANTS,
+    })
     selected_target = spark.segmentation_target if sam_prompt == "auto" else sam_prompt
     selected_prompt = "flower head" if selected_target == "flower" else "plant"
     reasons: list[str] = []
@@ -338,7 +370,7 @@ async def stream_muse(
 @app.post("/api/flows/compare-stream")
 async def stream_comparison(
     image_file: UploadFile = File(...),
-    model_name: str = Form("siglip2"),
+    model_name: str = Form("dinov3"),
     force_sam: bool = Form(False),
     skip_sam: bool = Form(False),
     sam_prompt: str = Form("auto"),

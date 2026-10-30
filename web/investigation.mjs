@@ -39,6 +39,20 @@ export function createInvestigationState() {
   };
 }
 
+/** Choose the largest selected SAM masks, preserving event order for equal areas. */
+export function largestSpecimenIds(regions, limit = 3) {
+  const area = (region) => {
+    if (Number.isFinite(region.mask_pixels) && region.mask_pixels >= 0)
+      return region.mask_pixels;
+    const [left, top, right, bottom] = region.bounds || [0, 0, 0, 0];
+    return Math.max(0, right - left) * Math.max(0, bottom - top);
+  };
+  return regions.map((region, index) => ({ region, index }))
+    .sort((a, b) => area(b.region) - area(a.region) || a.index - b.index)
+    .slice(0, limit)
+    .map(({ region }) => String(region.object_id));
+}
+
 /** Decode SSE across arbitrary network chunk boundaries; ignore heartbeats. */
 export async function* readPipelineEvents(stream) {
   if (!stream)

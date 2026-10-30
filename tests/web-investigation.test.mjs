@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createInvestigationState,
+  largestSpecimenIds,
   readPipelineEvents,
 } from "../web/investigation.mjs";
 
@@ -48,6 +49,18 @@ test("SAM flow waits for real masks before investigating regions", () => {
     machine.transition(stage);
     assert.equal(machine.state, stage);
   }
+});
+
+test("the first three specimen cards use actual SAM mask area", () => {
+  const regions = [
+    { object_id: "small", mask_pixels: 120, bounds: [0, 0, 100, 100] },
+    { object_id: "large", mask_pixels: 800, bounds: [0, 0, 30, 30] },
+    { object_id: "middle", mask_pixels: 400, bounds: [0, 0, 40, 40] },
+    { object_id: "equal", mask_pixels: 400, bounds: [0, 0, 50, 50] },
+  ];
+  assert.deepEqual(largestSpecimenIds(regions), ["large", "middle", "equal"]);
+  assert.deepEqual(largestSpecimenIds(regions.slice(0, 2)), ["large", "small"]);
+  assert.deepEqual(largestSpecimenIds([{ object_id: 7, bounds: [0, 0, 5, 6] }]), ["7"]);
 });
 
 test("empty masks or failed SAM can finish with the original scene report", () => {

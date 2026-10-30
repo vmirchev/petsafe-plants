@@ -107,6 +107,7 @@ class PlantAssessment(BaseModel):
     is_bouquet: bool
     bouquet_type: Literal["single_species", "mixed_species", "uncertain", "not_bouquet"]
     distinct_plant_count: int = Field(ge=0)
+    separate_plant_count: int = Field(ge=0)
     plant_groups: list[PlantGroup]
     suggest_segmentation: bool
     segmentation_target: Literal["flower", "plant"]
@@ -127,18 +128,6 @@ class ClassScore(BaseModel):
     probability: float = Field(ge=0, le=1)
 
 
-class FlowerDetection(BaseModel):
-    """One zero-shot flower box and its independent classifier result."""
-
-    bounds: tuple[int, int, int, int]
-    detector_score: float = Field(ge=0, le=1)
-    crop_data_url: str
-    predicted_class: str
-    confidence: float = Field(ge=0, le=1)
-    top_predictions: list[ClassScore]
-    toxicity: ToxicityResult | None = None
-
-
 class TrainedPrediction(BaseModel):
     """Prediction from one saved notebook 03 classifier head."""
 
@@ -148,9 +137,6 @@ class TrainedPrediction(BaseModel):
     confidence_is_calibrated: Literal[False] = False
     top_predictions: list[ClassScore]
     toxicity: ToxicityResult | None = None
-    detections: list[FlowerDetection] = Field(default_factory=list)
-    detection_status: Literal["not_run", "completed", "no_flowers", "failed"] = "not_run"
-    detection_error: str | None = None
     cache_hit: bool = False
 
 

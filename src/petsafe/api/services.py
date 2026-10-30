@@ -16,13 +16,11 @@ import numpy as np
 import torch
 from PIL import Image, ImageOps, UnidentifiedImageError
 from torch import nn
-from torchvision.models import EfficientNet_B2_Weights, efficientnet_b2
 
 from petsafe.api.result_cache import cache_result, get_cached_result, image_digest
 from petsafe.api.prompts import PLANT_ASSESSMENT_PROMPT
 from petsafe.api.schemas import (
     ClassScore,
-    FlowerDetection,
     PlantAssessment,
     SegmentAssessment,
     SparkToxicityOpinion,
@@ -33,16 +31,18 @@ from petsafe.api.toxicity import load_toxicity_database, lookup_toxicity
 
 ProgressCallback = Callable[[str, dict[str, Any]], Awaitable[None]]
 
-MODEL_NAMES = ("siglip2",)
+MODEL_NAMES = ("dinov3",)
+DINOV3_MODEL_ID = "facebook/dinov3-vits16-pretrain-lvd1689m"
 DATASET_CLASSES = 18
 MAX_UPLOAD_BYTES = int(os.getenv("PETSAFE_MAX_UPLOAD_BYTES", str(12 * 1024 * 1024)))
 MAX_IMAGE_SIDE = int(os.getenv("PETSAFE_MAX_IMAGE_SIDE", "2048"))
 MAX_SEGMENTS = int(os.getenv("PETSAFE_MAX_SEGMENTS", "6"))
+MAX_SEPARATE_PLANTS = int(os.getenv("PETSAFE_MAX_SEPARATE_PLANTS", "8"))
+if MAX_SEPARATE_PLANTS < 1:
+    raise ValueError("PETSAFE_MAX_SEPARATE_PLANTS must be a positive integer.")
 MIN_MASK_PIXELS = int(os.getenv("PETSAFE_MIN_MASK_PIXELS", "300"))
 MIN_MASK_AREA_RATIO = 0.001
 MIN_CROP_SIDE = 32
-MAX_FLOWER_DETECTIONS = int(os.getenv("PETSAFE_MAX_FLOWER_DETECTIONS", "6"))
-FLOWER_DETECTION_THRESHOLD = float(os.getenv("PETSAFE_FLOWER_DETECTION_THRESHOLD", "0.05"))
 DEFAULT_RUNS_DIR = Path("runs/plant_export_v20261026_2355546_holdout10_seed42")
 RUNS_DIR = Path(os.getenv("PETSAFE_RUNS_DIR", str(DEFAULT_RUNS_DIR))).expanduser()
 MODEL_API_BASE = "https://api.meta.ai/v1"
@@ -52,7 +52,6 @@ SPARK_MAX_COMPLETION_TOKENS = int(
 )
 SAM_MODEL = "sam-3.1"
 _MODEL_LOCK = Lock()
-_DETECTOR_LOCK = Lock()
 
 _CONFIDENCE = {"type": "string", "enum": ["high", "medium", "low"]}
 _PLANT_GROUP_SCHEMA: dict[str, Any] = {
@@ -82,6 +81,7 @@ ASSESSMENT_SCHEMA: dict[str, Any] = {
                 "is_bouquet": {"type": "boolean"},
                 "bouquet_type": {"type": "string", "enum": ["single_species", "mixed_species", "uncertain", "not_bouquet"]},
                 "distinct_plant_count": {"type": "integer"},
+                "separate_plant_count": {"type": "integer"},
                 "plant_groups": {"type": "array", "items": _PLANT_GROUP_SCHEMA},
                 "suggest_segmentation": {"type": "boolean"},
                 "segmentation_target": {"type": "string", "enum": ["flower", "plant"]},
@@ -92,7 +92,7 @@ ASSESSMENT_SCHEMA: dict[str, Any] = {
                 "photo_reason": {"type": "string"},
             },
             "required": [
-                "is_bouquet", "bouquet_type", "distinct_plant_count", "plant_groups",
+                "is_bouquet", "bouquet_type", "distinct_plant_count", "separate_plant_count", "plant_groups",
                 "suggest_segmentation", "segmentation_target", "segmentation_target_reason",
                 "segmentation_reason",
                 "another_photo_needed", "photo_instructions", "photo_reason",
@@ -152,34 +152,24 @@ class TrainedModel:
             )
 
         config = json.loads((run_dir / "config.json").read_text(encoding="utf-8"))["training"]
+        if config.get("model_name") != name or config.get("hf_dinov3_id") != DINOV3_MODEL_ID:
+            raise ValueError(f"Expected a {DINOV3_MODEL_ID} training run in {run_dir}.")
         mapping = json.loads((run_dir / "class_mapping.json").read_text(encoding="utf-8"))
         self.class_names = mapping["index_to_class"]
         if len(self.class_names) != DATASET_CLASSES:
             raise ValueError(f"Expected {DATASET_CLASSES} classes in {run_dir / 'class_mapping.json'}.")
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        if name == "efficientnet_b2":
-            weights = EfficientNet_B2_Weights.IMAGENET1K_V1
-            self.encoder = efficientnet_b2(weights=weights)
-            self.encoder.classifier = nn.Identity()
-            self.processor = weights.transforms()
-            self.encoder_kind = "torchvision"
-        else:
-            from transformers import AutoImageProcessor, AutoModel, AutoProcessor
+        from transformers import AutoImageProcessor, AutoModel
 
-            model_id = config["hf_dinov3_id"] if name == "dinov3" else config["hf_siglip2_id"]
-            token = os.getenv("HF_TOKEN") if name == "dinov3" else None
-            processor_class = AutoImageProcessor if name == "dinov3" else AutoProcessor
-            try:
-                self.processor = processor_class.from_pretrained(model_id, token=token)
-                self.encoder = AutoModel.from_pretrained(model_id, token=token)
-            except OSError as exc:
-                if name == "dinov3":
-                    raise RuntimeError(
-                        "DINOv3 access failed. Accept the Hugging Face model terms and set HF_TOKEN."
-                    ) from exc
-                raise
-            self.encoder_kind = name
+        token = os.getenv("HF_TOKEN")
+        try:
+            self.processor = AutoImageProcessor.from_pretrained(DINOV3_MODEL_ID, token=token)
+            self.encoder = AutoModel.from_pretrained(DINOV3_MODEL_ID, token=token)
+        except OSError as exc:
+            raise RuntimeError(
+                "DINOv3 access failed. Accept the Hugging Face model terms and set HF_TOKEN."
+            ) from exc
         self.encoder.to(self.device).eval()
         for parameter in self.encoder.parameters():
             parameter.requires_grad_(False)
@@ -200,18 +190,12 @@ class TrainedModel:
 
     def _embedding(self, image: Image.Image) -> torch.Tensor:
         with torch.inference_mode():
-            if self.encoder_kind == "torchvision":
-                pixels = self.processor(image).unsqueeze(0).to(self.device)
-                return self.encoder(pixels)
             inputs = self.processor(images=[image], return_tensors="pt")
             inputs = {
                 key: value.to(self.device) if torch.is_tensor(value) else value
                 for key, value in inputs.items()
             }
-            if self.encoder_kind == "siglip2":
-                output = self.encoder.get_image_features(**inputs)
-            else:
-                output = self.encoder(**inputs, return_dict=True)
+            output = self.encoder(**inputs, return_dict=True)
             if torch.is_tensor(output):
                 return output
             for attribute in ("image_embeds", "pooler_output"):
@@ -265,92 +249,10 @@ async def predict_trained(name: str, image: Image.Image) -> TrainedPrediction:
     return prediction
 
 
-@lru_cache(maxsize=1)
-def get_flower_detector():
-    """Load Grounding DINO tiny once, on the first trained-flow request."""
-    from transformers import pipeline
-
-    return pipeline(
-        "zero-shot-object-detection",
-        model="IDEA-Research/grounding-dino-tiny",
-        device=0 if torch.cuda.is_available() else -1,
-    )
-
-
-def _flower_boxes(image: Image.Image) -> list[tuple[tuple[int, int, int, int], float]]:
-    """Detect and deduplicate flower boxes before crop classification."""
-    with _DETECTOR_LOCK:
-        detections = get_flower_detector()(
-            image, candidate_labels=["flower"], threshold=FLOWER_DETECTION_THRESHOLD
-        )
-    candidates = []
-    for detection in detections:
-        box = detection["box"]
-        bounds = (
-            max(0, int(box["xmin"])), max(0, int(box["ymin"])),
-            min(image.width, int(box["xmax"])), min(image.height, int(box["ymax"])),
-        )
-        if bounds[2] - bounds[0] < 24 or bounds[3] - bounds[1] < 24:
-            continue
-        candidates.append((bounds, float(detection["score"])))
-    candidates.sort(key=lambda item: item[1], reverse=True)
-    kept = []
-    for bounds, score in candidates:
-        area = (bounds[2] - bounds[0]) * (bounds[3] - bounds[1])
-        overlaps = False
-        for other, _ in kept:
-            intersection = (
-                max(0, min(bounds[2], other[2]) - max(bounds[0], other[0]))
-                * max(0, min(bounds[3], other[3]) - max(bounds[1], other[1]))
-            )
-            other_area = (other[2] - other[0]) * (other[3] - other[1])
-            if intersection / (area + other_area - intersection) > 0.5:
-                overlaps = True
-                break
-        if overlaps:
-            continue
-        kept.append((bounds, score))
-        if len(kept) >= MAX_FLOWER_DETECTIONS:
-            break
-    return kept
-
-
 async def predict_trained_flow(name: str, image: Image.Image) -> TrainedPrediction:
-    """Classify the whole image and each zero-shot flower crop independently."""
+    """Classify the whole image with the saved DINOv3 head."""
     full = await predict_trained(name, image)
-    full = full.model_copy(update={"toxicity": lookup_toxicity(full.predicted_class)})
-    box_key = (
-        f"flower-boxes:v1:{FLOWER_DETECTION_THRESHOLD}:{MAX_FLOWER_DETECTIONS}:"
-        f"{image.width}:{image.height}:{image_digest(image.tobytes())}"
-    )
-    cached_boxes = get_cached_result(box_key)
-    try:
-        if cached_boxes is None:
-            boxes = await asyncio.to_thread(_flower_boxes, image)
-            cache_result(box_key, {"boxes": boxes})
-        else:
-            boxes = cached_boxes["boxes"]
-    except Exception as exc:
-        return full.model_copy(update={"detection_status": "failed", "detection_error": str(exc)})
-    detections = []
-    for bounds, score in boxes:
-        crop = image.crop(bounds)
-        prediction = await predict_trained(name, crop)
-        buffer = io.BytesIO()
-        crop.save(buffer, format="JPEG", quality=85)
-        detections.append(FlowerDetection(
-            bounds=bounds,
-            detector_score=score,
-            crop_data_url=_data_url(buffer.getvalue()),
-            predicted_class=prediction.predicted_class,
-            confidence=prediction.confidence,
-            top_predictions=prediction.top_predictions,
-            toxicity=lookup_toxicity(prediction.predicted_class),
-        ))
-    return full.model_copy(update={
-        "detections": detections,
-        "detection_status": "completed" if detections else "no_flowers",
-    })
+    return full.model_copy(update={"toxicity": lookup_toxicity(full.predicted_class)})
 
 
 def _data_url(data: bytes, media_type: str = "image/jpeg") -> str:
@@ -441,7 +343,8 @@ async def assess_with_spark(image_bytes: bytes, extra_instruction: str = "") -> 
         item["class_name"] for item in load_toxicity_database()["plants"]
     )
     developer_prompt = (
-        PLANT_ASSESSMENT_PROMPT + "\nAllowed toxicity_lookup_key values: "
+        PLANT_ASSESSMENT_PROMPT.format(max_separate_plants=MAX_SEPARATE_PLANTS)
+        + "\nAllowed toxicity_lookup_key values: "
         + supported_classes + ", unknown."
     )
     prompt_hash = image_digest(developer_prompt.encode("utf-8"))
@@ -681,13 +584,31 @@ async def segment_and_assess(
             candidates.append(candidate)
     selected = _select_mask_candidates(candidates, image.width * image.height)
     segments: list[SegmentAssessment] = []
-    crops = [(candidate, _encode_mask_crop(image, candidate)) for candidate in selected]
+    crops = []
+    for candidate in selected:
+        crop_bytes = _encode_mask_crop(image, candidate)
+        crops.append((candidate, crop_bytes))
+        if emit:
+            await emit("specimen_ready", {
+                "region": {
+                    "object_id": candidate.object_id,
+                    "bounds": candidate.bounds,
+                    "mask_pixels": candidate.pixels,
+                    "crop_data_url": _data_url(crop_bytes, "image/png"),
+                },
+                "index": len(crops),
+                "selected_count": len(selected),
+                "mask_count": mask_count,
+            })
+            # Let the SSE response flush this real crop while the next is encoded.
+            await asyncio.sleep(0)
     if emit:
         await emit("segments_ready", {
             "regions": [
                 {
                     "object_id": candidate.object_id,
                     "bounds": candidate.bounds,
+                    "mask_pixels": candidate.pixels,
                     "crop_data_url": _data_url(crop_bytes, "image/png"),
                 }
                 for candidate, crop_bytes in crops
