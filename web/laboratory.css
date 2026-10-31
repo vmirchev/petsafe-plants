@@ -1854,3 +1854,7 @@ body[data-app-env="production"][data-investigation="error"] .control-action {
   min-width: 190px;
 }
 body[data-app-env="production"] .settings-panel .privacy-note { display: none; }
+.availability-banner { position: relative; z-index: 30; width: min(680px, calc(100% - 32px)); margin: 16px auto 0; padding: 14px 18px; border: 1px solid #bca46b; border-radius: 12px; background: #263626f2; color: #f2ebd3; box-shadow: 0 12px 32px #0005; text-align: left; }
+.availability-banner[hidden] { display: none; }
+.availability-banner strong { display: block; margin-bottom: 5px; font: 20px Georgia,serif; }
+.availability-banner a { display: inline-block; margin: 8px 14px 0 0; color: #dbe7b3; text-underline-offset: 3px; }

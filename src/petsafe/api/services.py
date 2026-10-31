@@ -18,6 +18,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from torch import nn
 
 from petsafe.api.result_cache import cache_result, get_cached_result, image_digest
+from petsafe.api.admin_store import reserve_call, set_call_cost
 from petsafe.api.prompts import PLANT_ASSESSMENT_PROMPT
 from petsafe.api.schemas import (
     ClassScore,
@@ -46,6 +47,31 @@ MIN_CROP_SIDE = 32
 DEFAULT_RUNS_DIR = Path("runs/plant_export_v20261026_2355546_holdout10_seed42")
 RUNS_DIR = Path(os.getenv("PETSAFE_RUNS_DIR", str(DEFAULT_RUNS_DIR))).expanduser()
 MODEL_API_BASE = "https://api.meta.ai/v1"
+
+
+async def _paid_spark_call(client: Any, **kwargs: Any) -> Any:
+    """Reserve every attempt, including explicit retries, before calling Meta."""
+    from openai import APIConnectionError, APIStatusError
+
+    for attempt in range(3):
+        call_id = reserve_call("spark")
+        try:
+            response = await client.chat.completions.create(**kwargs)
+        except (APIConnectionError, APIStatusError) as exc:
+            retryable = isinstance(exc, APIConnectionError) or getattr(exc, "status_code", 0) in {429, 500, 502, 503, 504}
+            if not retryable or attempt == 2:
+                raise
+            await asyncio.sleep(0.5 * (attempt + 1))
+            continue
+        usage = response.usage
+        input_tokens = getattr(usage, "prompt_tokens", 0) or 0
+        output_tokens = getattr(usage, "completion_tokens", 0) or 0
+        details = getattr(usage, "prompt_tokens_details", None)
+        cached = (details.get("cached_tokens") if isinstance(details, dict)
+                  else getattr(details, "cached_tokens", 0)) or 0
+        set_call_cost(call_id, ((input_tokens - cached) * 1.25 + cached * 0.15 + output_tokens * 4.25) / 1_000_000)
+        return response
+    raise RuntimeError("Muse Spark retries exhausted")
 SPARK_MODEL = os.getenv("PETSAFE_SPARK_MODEL", "muse-spark-1.3")
 SPARK_MAX_COMPLETION_TOKENS = int(
     os.getenv("PETSAFE_SPARK_MAX_COMPLETION_TOKENS", "3000")
@@ -306,9 +332,9 @@ async def ask_spark_toxicity_opinion(
         raise RuntimeError("Set MODEL_API_KEY in the API server environment.")
     from openai import AsyncOpenAI
 
-    client = AsyncOpenAI(base_url=MODEL_API_BASE, api_key=api_key, timeout=120, max_retries=2)
+    client = AsyncOpenAI(base_url=MODEL_API_BASE, api_key=api_key, timeout=120, max_retries=0)
     try:
-        response = await client.chat.completions.create(
+        response = await _paid_spark_call(client,
             model=SPARK_MODEL,
             messages=[
                 {"role": "developer", "content": TOXICITY_OPINION_PROMPT},
@@ -368,9 +394,9 @@ async def assess_with_spark(image_bytes: bytes, extra_instruction: str = "") -> 
         raise RuntimeError("Set MODEL_API_KEY in the API server environment.")
     from openai import AsyncOpenAI
 
-    client = AsyncOpenAI(base_url=MODEL_API_BASE, api_key=api_key, timeout=120, max_retries=2)
+    client = AsyncOpenAI(base_url=MODEL_API_BASE, api_key=api_key, timeout=120, max_retries=0)
     try:
-        response = await client.chat.completions.create(
+        response = await _paid_spark_call(client,
             model=SPARK_MODEL,
             messages=[
                 {"role": "developer", "content": developer_prompt},
@@ -552,8 +578,9 @@ async def segment_and_assess(
     from meta_sam_parser import image_segmentation_format, parse_responses_stream
     from openai import AsyncOpenAI
 
-    client = AsyncOpenAI(base_url=MODEL_API_BASE, api_key=api_key, timeout=180, max_retries=2)
+    client = AsyncOpenAI(base_url=MODEL_API_BASE, api_key=api_key, timeout=180, max_retries=0)
     try:
+        sam_call_id = reserve_call("sam")
         events = await client.responses.create(
             model=SAM_MODEL,
             input=[{
@@ -569,6 +596,7 @@ async def segment_and_assess(
         )
         parsed = parse_responses_stream(events, image_segmentation_format())
         result = await parsed.final_result()
+        set_call_cost(sam_call_id, 0.0025)
     finally:
         await client.close()
 

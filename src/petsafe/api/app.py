@@ -3,11 +3,17 @@
 import asyncio
 import json
 import os
+import base64
+import hashlib
+import hmac
+import secrets
+import time
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from pydantic import BaseModel, Field
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
@@ -32,6 +38,7 @@ from petsafe.api.services import (
     predict_trained_flow,
     segment_and_assess,
 )
+from petsafe.api.admin_store import MetaUnavailable, record_investigation, save_settings, stats
 
 APP_ENV = os.getenv("PETSAFE_APP_ENV", "development").strip().lower()
 if APP_ENV not in {"development", "production"}:
@@ -84,6 +91,12 @@ app.add_middleware(
 )
 
 
+@app.exception_handler(MetaUnavailable)
+async def meta_unavailable_handler(_request: Request, exc: MetaUnavailable) -> JSONResponse:
+    return JSONResponse(status_code=429 if exc.code == "quota_exceeded" else 503,
+                        content={"code": exc.code, "detail": exc.code})
+
+
 @app.get("/healthz")
 async def health() -> dict[str, str | int]:
     """Report service readiness without exposing credentials."""
@@ -100,6 +113,82 @@ async def health() -> dict[str, str | int]:
 async def frontend_config() -> dict[str, str]:
     """Tell the static client which presentation mode the server selected."""
     return {"environment": APP_ENV}
+
+
+@app.get("/api/availability")
+async def availability() -> dict:
+    """Report whether new paid Meta calls can be made."""
+    current = stats()
+    code = "api_disabled" if not current["enabled"] else "quota_exceeded" if not current["remaining"] else "available"
+    return {"code": code, "github_url": "https://github.com/vmirchev/petsafe-plants",
+            "demo_url": os.getenv("PETSAFE_DEMO_URL", "https://www.youtube.com/")}
+
+
+class AdminLogin(BaseModel):
+    password: str
+
+
+class AdminSettings(BaseModel):
+    enabled: bool
+    daily_limit: int = Field(ge=0, le=1_000_000)
+
+
+def _admin_secret() -> bytes:
+    value = os.getenv("PETSAFE_SESSION_SECRET", "")
+    if len(value) < 32:
+        raise HTTPException(503, "Admin session secret is not configured.")
+    return value.encode()
+
+
+def _require_admin(request: Request) -> None:
+    token = request.cookies.get("petsafe_admin", "")
+    try:
+        payload, signature = token.rsplit(".", 1)
+        expected = hmac.new(_admin_secret(), payload.encode(), hashlib.sha256).hexdigest()
+        decoded = base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)).decode()
+        expires = int(decoded.split(":", 1)[0])
+    except (ValueError, UnicodeError, IndexError):
+        raise HTTPException(401, "Admin login required.") from None
+    if not hmac.compare_digest(signature, expected) or expires < time.time():
+        raise HTTPException(401, "Admin login required.")
+
+
+@app.get("/admin")
+async def admin_page() -> FileResponse:
+    """Serve the login shell; all dashboard data requires a signed session."""
+    return FileResponse(Path(__file__).resolve().parents[3] / "web" / "admin.html")
+
+
+@app.post("/admin/api/login")
+async def admin_login(credentials: AdminLogin, request: Request, response: Response) -> dict:
+    """Create a signed, HttpOnly admin session after password verification."""
+    configured = os.getenv("PETSAFE_ADMIN_PASSWORD", "")
+    _admin_secret()
+    if not configured or not hmac.compare_digest(credentials.password, configured):
+        raise HTTPException(401, "Invalid admin password.")
+    payload = base64.urlsafe_b64encode(f"{int(time.time()) + 28800}:{secrets.token_hex(16)}".encode()).decode().rstrip("=")
+    signature = hmac.new(_admin_secret(), payload.encode(), hashlib.sha256).hexdigest()
+    response.set_cookie("petsafe_admin", f"{payload}.{signature}", max_age=28800,
+                        httponly=True, secure=APP_ENV == "production" or request.url.scheme == "https",
+                        samesite="strict", path="/admin")
+    return {"ok": True}
+
+
+@app.post("/admin/api/logout", dependencies=[Depends(_require_admin)])
+async def admin_logout(response: Response) -> dict:
+    response.delete_cookie("petsafe_admin", path="/admin")
+    return {"ok": True}
+
+
+@app.get("/admin/api/stats", dependencies=[Depends(_require_admin)])
+async def admin_stats() -> dict:
+    return stats()
+
+
+@app.post("/admin/api/settings", dependencies=[Depends(_require_admin)])
+async def admin_settings(settings: AdminSettings) -> dict:
+    save_settings(settings.enabled, settings.daily_limit)
+    return stats()
 
 
 @app.get("/api/models")
@@ -140,6 +229,7 @@ async def trained_flow(
     name = _model_name(model_name)
     image, _normalized = await _read_image(image_file)
     try:
+        record_investigation()
         return _client_model(await predict_trained_flow(name, image))
     except FileNotFoundError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
@@ -152,7 +242,10 @@ async def muse_spark_flow(image_file: UploadFile = File(...)) -> PlantAssessment
     """Run Muse Spark on the original image and return its structured JSON."""
     _image, normalized = await _read_image(image_file)
     try:
+        record_investigation()
         return _client_model(await assess_with_spark(normalized))
+    except MetaUnavailable:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Muse Spark request failed: {exc}") from exc
 
@@ -171,6 +264,8 @@ async def muse_toxicity_opinion(
     _image, normalized = await _read_image(image_file)
     try:
         return await ask_spark_toxicity_opinion(normalized, plant_name.strip(), animal)
+    except MetaUnavailable:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Muse Spark request failed: {exc}") from exc
 
@@ -224,6 +319,8 @@ async def _run_comparison(
     tasks = [asyncio.create_task(classifier()), asyncio.create_task(muse_path())]
     try:
         trained, (spark, segmentation) = await asyncio.gather(*tasks)
+    except MetaUnavailable:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Initial comparison failed: {exc}") from exc
     finally:
@@ -251,6 +348,7 @@ async def _run_muse_path(
     publish: ProgressCallback,
 ) -> tuple[PlantAssessment, SegmentationResult]:
     """Assess the scene and selected SAM regions without requiring a classifier."""
+    record_investigation()
     spark = await assess_with_spark(normalized)
     if spark.separate_plant_count > MAX_SEPARATE_PLANTS:
         reason = (
@@ -333,6 +431,8 @@ async def _run_muse_path(
                     "photo_instructions": "Take a closer, sharper photo showing the uncertain plant and its leaves or flowers.",
                     "photo_reason": "No useful isolated region was available for another visual assessment.",
                 })
+        except MetaUnavailable:
+            raise
         except Exception as exc:
             # Keep the scene result usable if SAM or a crop reassessment fails.
             segmentation = SegmentationResult(
@@ -380,6 +480,8 @@ async def stream_muse(
                     image_height=image.height,
                 )
                 await emit("completed", result.model_dump(mode="json"))
+            except MetaUnavailable as exc:
+                await emit("error", {"code": exc.code, "message": exc.code})
             except Exception as exc:
                 await emit("error", {"message": str(exc)})
 
@@ -433,6 +535,8 @@ async def stream_comparison(
                     image, normalized, name, force_sam, skip_sam, sam_prompt, emit
                 )
                 await emit("completed", result.model_dump(mode="json"))
+            except MetaUnavailable as exc:
+                await emit("error", {"code": exc.code, "message": exc.code})
             except Exception as exc:
                 await emit("error", {"message": str(exc)})
 

@@ -17,6 +17,7 @@ web/archive/
 !tests/
 tests/*
 !tests/web-investigation.test.mjs
+!tests/test_admin.py
 
 # Track Jupyter notebooks.
 !notebooks/

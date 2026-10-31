@@ -6,6 +6,10 @@ services:
       - "127.0.0.1:8000:8000"
     environment:
       PETSAFE_APP_ENV: ${PETSAFE_APP_ENV:-development}
+      PETSAFE_ADMIN_PASSWORD: ${PETSAFE_ADMIN_PASSWORD:-}
+      PETSAFE_SESSION_SECRET: ${PETSAFE_SESSION_SECRET:-}
+      PETSAFE_ADMIN_DB: /state/admin.sqlite3
+      PETSAFE_DEMO_URL: ${PETSAFE_DEMO_URL:-}
       MODEL_API_KEY: ${MODEL_API_KEY:?Set MODEL_API_KEY in .env}
       HF_TOKEN: ${HF_TOKEN:-}
       PETSAFE_RUNS_DIR: /models
@@ -29,7 +33,9 @@ services:
         target: /models
         read_only: true
       - model-cache:/cache
+      - admin-data:/state
     restart: unless-stopped
 
 volumes:
   model-cache:
+  admin-data:

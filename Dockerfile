@@ -19,8 +19,8 @@ RUN apt-get update \
     && apt-get install --no-install-recommends -y libgomp1 \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --create-home --uid 10001 app \
-    && mkdir -p /cache/huggingface /cache/torch /models \
-    && chown -R app:app /cache /models
+    && mkdir -p /cache/huggingface /cache/torch /models /state \
+    && chown -R app:app /cache /models /state
 
 COPY pyproject.toml README.md ./
 RUN --mount=type=cache,target=/root/.cache/uv \

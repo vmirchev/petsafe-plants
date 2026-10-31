@@ -4,7 +4,6 @@ import {
   readPipelineEvents,
 } from "./investigation.mjs";
 
-const PRESENTATION_DELAY_MS = 1800;
 // Motion is loaded only for decorative effects. Inference and controls still work
 // when the CDN is unavailable (for example on an offline demo machine).
 let motionAnimate = null;
@@ -111,6 +110,39 @@ const appConfigReady = loadAppConfig();
 
 function apiUrl(path) {
   return `${apiInput.value.trim().replace(/\/+$/, "")}${path}`;
+}
+
+function showAvailability(data) {
+  const banner = byId("availability-banner");
+  banner.hidden = data.code === "available";
+  banner.replaceChildren();
+  if (banner.hidden) return;
+  const title = document.createElement("strong");
+  title.textContent = "Live plant analysis is temporarily unavailable";
+  const message = document.createElement("p");
+  message.textContent = data.code === "quota_exceeded"
+    ? "Today's analysis quota has been reached. Please try again later."
+    : "Live analysis is paused. You can still explore the site and sample photos.";
+  banner.append(title, message);
+  for (const [label, url] of [["GitHub project", data.github_url], ["Watch YouTube demo", data.demo_url || "https://www.youtube.com/"]]) {
+    if (!url?.startsWith("https://")) continue;
+    const link = document.createElement("a");
+    link.href = url;
+    link.textContent = label + " ↗";
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    banner.append(link);
+  }
+}
+
+async function refreshAvailability() {
+  try {
+    const response = await fetch(apiUrl("/api/availability"), { cache: "no-store" });
+    if (!response.ok) return true;
+    const data = await response.json();
+    showAvailability(data);
+    return data.code === "available";
+  } catch { return true; }
 }
 
 function setApiStatus(text, state) {
@@ -755,6 +787,7 @@ function renderSegmentation(result) {
 async function compare() {
   if (!selectedFile) return;
   await appConfigReady;
+  if (!await refreshAvailability()) return;
   if (!appConfigAvailable) {
     showError("The investigation service is unavailable. Refresh after the API is running.");
     return;
@@ -792,6 +825,11 @@ async function compare() {
       if (museOnly && response.status === 405)
         throw new Error("The running API does not have the Muse investigation route yet. Recreate the API container with: docker compose up -d --force-recreate --no-deps api");
       const payload = await response.json();
+      if (["api_disabled", "quota_exceeded"].includes(payload.code)) {
+        const error = new Error(payload.code);
+        error.code = payload.code;
+        throw error;
+      }
       throw new Error(
         typeof payload.detail === "string"
           ? payload.detail
@@ -800,29 +838,6 @@ async function compare() {
     }
     for await (const { event, data } of readPipelineEvents(response.body)) {
       if (request !== requestGeneration) return;
-      if (event === "completed" && !motionDisabled()) {
-        // Show any new hazard immediately; only the final layout waits.
-        sceneAssessments = [
-          data.muse_spark_flow,
-          ...data.segmentation.segments.map((item) => item.assessment),
-        ];
-        updateSafety();
-        const followupRequest = sceneAssessments.find((item) => item.another_photo_needed);
-        if (followupRequest) updateFollowup(followupRequest);
-        setInvestigationState("presenting");
-        await new Promise((resolve, reject) => {
-          const abort = () => {
-            clearTimeout(timer);
-            reject(new DOMException("Investigation cancelled", "AbortError"));
-          };
-          const timer = setTimeout(() => {
-            controller.signal.removeEventListener("abort", abort);
-            resolve();
-          }, PRESENTATION_DELAY_MS);
-          controller.signal.addEventListener("abort", abort, { once: true });
-        });
-        if (request !== requestGeneration) return;
-      }
       handlePipelineEvent(event, data);
     }
     if (investigationState !== "completed")
@@ -833,6 +848,10 @@ async function compare() {
     if (request !== requestGeneration || error.name === "AbortError") return;
     controller.abort();
     setInvestigationState("error");
+    if (["api_disabled", "quota_exceeded"].includes(error.code)) {
+      await refreshAvailability();
+      return;
+    }
     showError(document.body.dataset.appEnv === "development"
       ? error.message || "The investigation could not finish. Please retry."
       : "The investigation could not finish. Please try again.");
@@ -870,6 +889,7 @@ els.sampleGallery?.addEventListener("click", async (event) => {
   }
 });
 els.dropzone.addEventListener("click", (event) => {
+  if (event.target.closest("a")) return;
   if (event.target.closest("button")) return;
   if (event.target.closest(".image-stage")) return;
   els.imageInput.click();
@@ -1358,7 +1378,11 @@ function shouldAutoOpenSpecimens() {
   return !window.matchMedia("(hover: none) and (pointer: coarse), (max-width: 640px)").matches;
 }
 function handlePipelineEvent(event, data) {
-  if (event === "error") throw new Error(data.message);
+  if (event === "error") {
+    const error = new Error(data.message);
+    error.code = data.code;
+    throw error;
+  }
   if (event === "completed")
     els.results.hidden = false;
   if (event === "analyzing_scene")
@@ -2491,4 +2515,4 @@ reducedMotion.addEventListener("change", syncMotionControl);
 syncMotionControl();
 resetOverview();
 setInvestigationState("idle");
-appConfigReady.then(loadModels);
+appConfigReady.then(() => { loadModels(); refreshAvailability(); });

@@ -7,7 +7,7 @@
     <meta name="description" content="Investigate plants with Muse Spark, optional SAM segmentation, and source-backed pet toxicity references.">
     <title>PetSafe Plants · Botanical Intelligence Laboratory</title>
     <link rel="stylesheet" href="/styles.css?v=laboratory-5">
-    <link rel="stylesheet" href="/laboratory.css?v=77">
+    <link rel="stylesheet" href="/laboratory.css?v=78">
   </head>
   <body class="muse-only" data-flow="muse" data-app-env="pending">
     <header class="topbar">
@@ -36,6 +36,7 @@
         <div class="workspace-topline"><div><span class="step-number">01</span><span id="workspace-step-label" class="section-label">ADD A PHOTO</span></div><div id="scene-overview" class="scene-overview" aria-live="polite" aria-label="Investigation summary"></div><div class="canvas-tools"><span class="format-note">JPG · PNG · WEBP <i>·</i> UP TO 12 MB</span><button id="close-all-specimens" class="canvas-size-button" type="button" title="Close specimen cards; click a numbered marker to reopen" hidden>Close all cards</button><button id="expand-canvas" class="canvas-size-button" type="button" aria-pressed="false" disabled>Expand canvas</button><button id="fullscreen-canvas" class="canvas-size-button" type="button" aria-pressed="false" disabled>Full screen</button></div></div>
         <div class="workspace-grid">
           <div id="dropzone" class="dropzone">
+            <div id="availability-banner" class="availability-banner" role="status" hidden></div>
             <input id="image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
             <div class="upload-empty" id="upload-empty">
               <div class="upload-icon" aria-hidden="true"><svg viewBox="0 0 80 80" fill="none"><path d="M40 65V35m0 19c-16 0-24-9-23-24 13-1 23 6 23 24Zm0-12c0-15 9-23 23-24 1 15-7 24-23 24Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M30 66h20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div>
@@ -131,6 +132,6 @@
       <dialog id="specimen-dialog" aria-label="Plant specimen inspection"><button id="close-specimen" class="icon-button" aria-label="Close inspection">×</button><div id="specimen-detail"></div><button id="dialog-new-plant" class="report-next-button dialog-next-button" type="button" hidden>Investigate another plant ↗</button></dialog>
       <footer class="disclaimer"><span class="disclaimer-icon" aria-hidden="true">!</span><p><strong>Experimental results, not safety advice.</strong> Plant identities and region boundaries can be wrong. Toxicity labels are source-backed references for a possible match, not a diagnosis or guarantee of safety. Contact a veterinarian if ingestion is suspected.</p></footer>
     </main>
-    <script src="/app.js?v=laboratory-88" type="module"></script>
+    <script src="/app.js?v=laboratory-91" type="module"></script>
   </body>
 </html>
