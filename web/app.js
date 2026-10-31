@@ -1354,6 +1354,9 @@ function resetReport() {
   els.results.hidden = true;
   byId("specimen-dialog").close();
 }
+function shouldAutoOpenSpecimens() {
+  return !window.matchMedia("(hover: none) and (pointer: coarse), (max-width: 640px)").matches;
+}
 function handlePipelineEvent(event, data) {
   if (event === "error") throw new Error(data.message);
   if (event === "completed")
@@ -1391,7 +1394,7 @@ function handlePipelineEvent(event, data) {
       .classList.toggle("has-specimens", data.regions.length > 0);
     byId("specimen-workspace").hidden = !data.regions.length;
     data.regions.forEach(addSpecimen);
-    const featuredIds = largestSpecimenIds(data.regions);
+    const featuredIds = shouldAutoOpenSpecimens() ? largestSpecimenIds(data.regions) : [];
     featuredIds.forEach((id) => reopenSpecimenCard(id, { focus: false }));
     updateSpecimenCardCount();
     if (featuredIds.length) previewSpecimens(featuredIds);
@@ -1411,15 +1414,32 @@ function handlePipelineEvent(event, data) {
         : "Identity unresolved";
       item.button.classList.add("identified");
       const hazard = groups.some(inspectionHazard);
-      item.button.classList.toggle("hazard", hazard);
-      item.reopenButton.classList.toggle("hazard", hazard);
+      const seriousEffects = groups.some((group) =>
+        (group.toxicity?.clinical_effects?.serious_effects?.length || 0) > 0 ||
+        (group.toxicity?.dog_toxicity?.clinical_effects?.serious_effects?.length || 0) > 0);
+      const listedNonToxic = groups.length > 0 && groups.every((group) =>
+        group.toxicity?.toxicity_status === "non_toxic" &&
+        group.toxicity?.dog_toxicity?.toxicity_status === "non_toxic");
+      const riskTone = seriousEffects && hazard ? "serious"
+        : hazard ? "hazard" : listedNonToxic ? "listed" : "unknown";
+      const riskDescription = {
+        serious: "Serious effects documented for a possible plant match.",
+        hazard: "Potential pet hazard for a possible plant match.",
+        listed: "Reported plant types have non-toxic cat and dog listings.",
+        unknown: "Toxicity or plant identity remains unresolved.",
+      }[riskTone];
+      for (const element of [item.button, item.reopenButton]) {
+        element.classList.remove("risk-serious", "risk-hazard", "risk-listed", "risk-unknown");
+        element.classList.add(`risk-${riskTone}`);
+        element.title = riskDescription;
+      }
       item.reopenButton.setAttribute("aria-label",
-        `Open specimen ${item.displayIndex}: ${item.caption.textContent}. ${hazard ? "Potential pet hazard." : "Regional assessment available."}`);
-      if (hazard && item.closed && !item.userClosed)
+        `Open specimen ${item.displayIndex}: ${item.caption.textContent}. ${riskDescription}`);
+      if (shouldAutoOpenSpecimens() && hazard && item.closed && !item.userClosed)
         reopenSpecimenCard(String(data.object_id), { focus: false });
       item.status.textContent = "See details ↗";
       item.button.setAttribute("aria-label",
-        `Inspect specimen ${item.displayIndex}: ${item.caption.textContent}. ${item.status.textContent}.`);
+        `Inspect specimen ${item.displayIndex}: ${item.caption.textContent}. ${riskDescription}`);
       placeSpecimens();
       if (
         inspectedSpecimen === String(data.object_id) &&
@@ -1463,7 +1483,8 @@ function handlePipelineEvent(event, data) {
   if (
     event === "completed" &&
     inspectedSpecimen &&
-    byId("specimen-dialog").open
+    byId("specimen-dialog").open &&
+    !specimenRecords.get(inspectedSpecimen)?.data.assessment
   )
     inspectSpecimen(inspectedSpecimen);
 }
@@ -1632,19 +1653,18 @@ function placeSpecimens() {
   const stageHeight = els.imageStage.clientHeight;
   const overlap = (a, b) => Math.max(0, Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left))
     * Math.max(0, Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top));
-  let guide = null;
-  if (!els.photoGuidance.hidden) {
-    const stage = els.imageStage.getBoundingClientRect();
-    const panel = els.photoGuidance.getBoundingClientRect();
-    guide = {
-      left: (panel.left - stage.left) * stageWidth / stage.width,
-      top: (panel.top - stage.top) * stageHeight / stage.height,
-      width: panel.width * stageWidth / stage.width,
-      height: panel.height * stageHeight / stage.height,
-    };
-  }
-  const guideKey = guide
-    ? [guide.left, guide.top, guide.width, guide.height].map(Math.round).join(":") : "";
+  const stage = els.imageStage.getBoundingClientRect();
+  const obstacles = [els.photoGuidance, byId("scene-card"), byId("region-progress")]
+    .filter((panel) => !panel.hidden)
+    .map((panel) => {
+      const rect = panel.getBoundingClientRect();
+      return {
+        left: (rect.left - stage.left) * stageWidth / stage.width,
+        top: (rect.top - stage.top) * stageHeight / stage.height,
+        width: rect.width * stageWidth / stage.width,
+        height: rect.height * stageHeight / stage.height,
+      };
+    });
   els.imageStage.classList.toggle(
     "compact-specimens",
     els.imageStage.clientHeight < 560,
@@ -1666,14 +1686,17 @@ function placeSpecimens() {
       return;
     }
     if (item.positioned && item.stageWidth === stageWidth &&
-        item.stageHeight === stageHeight && (!guide || item.guideKey === guideKey)) {
+        item.stageHeight === stageHeight) {
       const position = clampSpecimen(item.button,
         parseFloat(item.button.style.left) || 0,
         parseFloat(item.button.style.top) || 0);
-      placed.push({ ...position, width: item.button.offsetWidth,
-        height: item.button.offsetHeight });
-      positionSpecimenControls(item);
-      return;
+      const rect = { ...position, width: item.button.offsetWidth,
+        height: item.button.offsetHeight };
+      if (obstacles.every((panel) => overlap(rect, panel) === 0)) {
+        placed.push(rect);
+        positionSpecimenControls(item);
+        return;
+      }
     }
     const box = sourceBox(item.data.bounds);
     const width = item.button.offsetWidth;
@@ -1686,30 +1709,34 @@ function placeSpecimens() {
       [box.left - width - gap, centerY - height / 2],
       [centerX - width / 2, box.top + box.height + gap],
       [centerX - width / 2, box.top - height - gap],
-      [centerX + gap, centerY + gap],
-      [centerX - width - gap, centerY - height - gap],
+      [box.left + box.width + gap, box.top],
+      [box.left + box.width + gap, box.top + box.height - height],
+      [box.left - width - gap, box.top],
+      [box.left - width - gap, box.top + box.height - height],
     ];
+    const searchRadius = Math.max(width * 2, Math.min(stageWidth, stageHeight) * 0.65);
     for (let top = 5; top <= stageHeight - height - 5; top += Math.max(48, height / 2)) {
-      for (let left = 5; left <= stageWidth - width - 5; left += Math.max(48, width / 2))
-        candidates.push([left, top]);
+      for (let left = 5; left <= stageWidth - width - 5; left += Math.max(48, width / 2)) {
+        if (Math.hypot(left + width / 2 - centerX, top + height / 2 - centerY) <= searchRadius)
+          candidates.push([left, top]);
+      }
     }
     const scored = candidates.map(([left, top]) => {
       const p = clampSpecimen(item.button, left, top);
       const rect = { ...p, width, height };
       const distance = Math.hypot(p.left + width / 2 - centerX, p.top + height / 2 - centerY);
       const cardOverlap = placed.reduce((sum, other) => sum + overlap(rect, other), 0);
-      const guideOverlap = guide ? overlap(rect, guide) : 0;
-      return { ...p, cardOverlap, guideOverlap,
-        score: distance + overlap(rect, box) * 4 + cardOverlap * 1000 + guideOverlap * 400 };
+      const obstacleOverlap = obstacles.reduce((sum, panel) => sum + overlap(rect, panel), 0);
+      const area = Math.max(1, width * height);
+      return { ...p, score: distance + overlap(rect, box) / area * 300 +
+        cardOverlap / area * 1100 + obstacleOverlap / area * 1400 };
     });
-    const clear = scored.filter((candidate) => candidate.cardOverlap === 0 && candidate.guideOverlap === 0);
-    const position = (clear.length ? clear : scored).sort((a, b) => a.score - b.score)[0];
+    const position = scored.sort((a, b) => a.score - b.score)[0];
     item.button.style.left = `${position.left}px`;
     item.button.style.top = `${position.top}px`;
     item.positioned = true;
     item.stageWidth = stageWidth;
     item.stageHeight = stageHeight;
-    item.guideKey = guideKey;
     positionSpecimenControls(item);
     placed.push({ ...position, width, height });
   });

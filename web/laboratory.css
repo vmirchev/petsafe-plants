@@ -599,6 +599,10 @@ select {
 .floating-specimen.identified {
   border-color: #719875;
 }
+.floating-specimen.risk-serious { border: 2px solid #e48378; box-shadow: 0 15px 30px #0008, 0 0 18px #d66b6360; }
+.floating-specimen.risk-hazard { border: 2px solid #dba36e; }
+.floating-specimen.risk-listed { border-color: #8cc5a0; }
+.floating-specimen.risk-unknown { border-color: #8b9991; border-style: dashed; }
 .floating-specimen.hazard {
   border-color: #b98b61;
 }
@@ -1706,6 +1710,10 @@ button.animal-status:focus-visible { outline: 2px solid #e5d59b; outline-offset:
 .specimen-reopen { z-index: 1; }
 .specimen-reopen { width: 34px; height: 34px; font: 11px/1 monospace; transform: translate(-50%, -50%); }
 .specimen-reopen.hazard { border-color: #efb08e; background: #563329f2; color: #ffe6d5; }
+.specimen-reopen.risk-serious { border: 2px solid #e48378; background: #5c2928f2; color: #ffe9df; }
+.specimen-reopen.risk-hazard { border: 2px solid #dba36e; background: #503a25f2; color: #fff0da; }
+.specimen-reopen.risk-listed { border-color: #8cc5a0; }
+.specimen-reopen.risk-unknown { border-color: #8b9991; border-style: dashed; }
 .specimen-close:hover, .specimen-reopen:hover { background: #31523b; border-color: #d1dcad; }
 .specimen-close:focus-visible, .specimen-reopen:focus-visible { outline: 2px solid #e5d59b; outline-offset: 3px; }
 .canvas-tools { display: flex; align-items: center; gap: 10px; }
