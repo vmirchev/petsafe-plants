@@ -1581,6 +1581,8 @@ body[data-investigation="presenting"] .workspace.is-centered .settings-panel { d
   line-height: 1.35;
 }
 .specimen-taxon:empty { display: none; }
+.specimen-meta { color: #d9d4aa; font-size: 10px; line-height: 1.3; text-transform: capitalize; }
+.specimen-meta:empty { display: none; }
 .floating-specimen small, .image-stage.compact-specimens .floating-specimen small {
   display: block;
   overflow: visible;
@@ -1600,6 +1602,7 @@ body[data-investigation="presenting"] .workspace.is-centered .settings-panel { d
   .floating-specimen, .image-stage.compact-specimens .floating-specimen { width: min(152px, 43vw); min-height: 150px; padding: 7px; }
   .floating-specimen strong, .image-stage.compact-specimens .floating-specimen strong { font-size: 13px; }
   .specimen-taxon, .image-stage.compact-specimens .specimen-taxon { font-size: 10px; }
+  .specimen-meta { font-size: 9px; }
   .floating-specimen small, .image-stage.compact-specimens .floating-specimen small { font-size: 10px; }
 }
 

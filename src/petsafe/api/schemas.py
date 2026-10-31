@@ -161,6 +161,7 @@ class SegmentationResult(BaseModel):
     mask_count: int = 0
     filtered_count: int = 0
     assessed_count: int = 0
+    sam_response: dict[str, Any] | None = None
     error: str | None = None
 
 

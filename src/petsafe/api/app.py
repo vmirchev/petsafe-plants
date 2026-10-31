@@ -46,7 +46,7 @@ def _client_payload(value):
         return {
             key: _client_payload(item)
             for key, item in value.items()
-            if key not in {"raw_meta_response", "api_usage", "cache_hit"}
+            if key not in {"raw_meta_response", "sam_response", "api_usage", "cache_hit"}
         }
     if isinstance(value, list):
         return [_client_payload(item) for item in value]
@@ -281,7 +281,7 @@ async def _run_muse_path(
         "max_separate_plants": MAX_SEPARATE_PLANTS,
     })
     selected_target = spark.segmentation_target if sam_prompt == "auto" else sam_prompt
-    selected_prompt = "flower head" if selected_target == "flower" else "plant"
+    selected_prompt = "flower" if selected_target == "flower" else "plant"
     reasons: list[str] = []
     if spark.suggest_segmentation:
         reasons.append("Muse Spark recommended a closer look at plant regions.")

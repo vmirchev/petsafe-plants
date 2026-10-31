@@ -673,6 +673,7 @@ function renderSparkUsage(container, result) {
 
 function renderSegmentation(result) {
   els.segmentationPanel.hidden = false;
+  els.segmentationPanel.querySelector(".sam-response-details")?.remove();
   els.segmentationStatus.className = `status-pill segmentation-status status-${result.status}`;
   els.segmentationStatus.textContent =
     {
@@ -739,6 +740,15 @@ function renderSegmentation(result) {
     renderRawMetaResponse(body, segment.assessment);
     card.append(imageWrap, body);
     els.segments.append(card);
+  }
+  if (result.sam_response) {
+    const details = element("details", "raw-response-details sam-response-details");
+    details.append(
+      element("summary", "", "Parsed SAM response · mask metadata"),
+      element("p", "spark-evidence", "Mask encoding is omitted; rejected masks are listed with their original bounds."),
+      element("pre", "raw-response-json", JSON.stringify(result.sam_response, null, 2)),
+    );
+    els.segmentationPanel.append(details);
   }
 }
 
@@ -1390,45 +1400,24 @@ function handlePipelineEvent(event, data) {
     const item = specimenRecords.get(String(data.object_id));
     if (item) {
       item.data = data;
-      const groups = data.assessment.plant_groups || [];
-      const primary = groups.find((group) =>
-        group.plant_identification && !/^(unknown|unidentified|uncertain)/i.test(group.plant_identification)) || groups[0];
-      const additional = Math.max(0, groups.length - 1);
+      const groups = orderedPlantGroups(data.assessment);
+      const primary = groups[0];
       item.caption.textContent = primary?.plant_identification || "Unresolved specimen";
       item.taxon.textContent = primary?.scientific_name &&
         !/^(unknown|unidentified|uncertain)/i.test(primary.scientific_name)
         ? primary.scientific_name : "";
+      item.meta.textContent = primary
+        ? `${primary.identification_confidence} reported confidence${groups.length > 1 ? ` · ${groups.length} plant types reported` : ""}`
+        : "Identity unresolved";
       item.button.classList.add("identified");
-      const hazard = groups.some(
-        (group) =>
-          group.toxicity?.toxicity_status === "toxic" ||
-          group.toxicity?.potential_hazard ||
-          group.toxicity?.dog_toxicity?.toxicity_status === "toxic" ||
-          group.toxicity?.dog_toxicity?.potential_hazard,
-      );
-      const primaryHazard = primary?.toxicity?.toxicity_status === "toxic" ||
-        primary?.toxicity?.potential_hazard ||
-        primary?.toxicity?.dog_toxicity?.toxicity_status === "toxic" ||
-        primary?.toxicity?.dog_toxicity?.potential_hazard;
+      const hazard = groups.some(inspectionHazard);
       item.button.classList.toggle("hazard", hazard);
       item.reopenButton.classList.toggle("hazard", hazard);
       item.reopenButton.setAttribute("aria-label",
         `Open specimen ${item.displayIndex}: ${item.caption.textContent}. ${hazard ? "Potential pet hazard." : "Regional assessment available."}`);
       if (hazard && item.closed && !item.userClosed)
         reopenSpecimenCard(String(data.object_id), { focus: false });
-      const nonToxic =
-        groups.length &&
-        groups.every(
-          (group) => group.toxicity?.toxicity_status === "non_toxic" &&
-            group.toxicity?.dog_toxicity?.toxicity_status === "non_toxic",
-        );
-      item.button.classList.toggle("non-toxic", Boolean(nonToxic));
-      const status = hazard
-        ? (primaryHazard ? "Potential hazard" : "Hazard among groups")
-        : nonToxic
-          ? "Listed non-toxic"
-          : "Unresolved · inspect";
-      item.status.textContent = additional ? `${status} · +${additional} groups` : status;
+      item.status.textContent = "See details ↗";
       item.button.setAttribute("aria-label",
         `Inspect specimen ${item.displayIndex}: ${item.caption.textContent}. ${item.status.textContent}.`);
       placeSpecimens();
@@ -1851,12 +1840,14 @@ function addSpecimen(data) {
   image.draggable = false;
   const caption = element("strong", "", `Specimen ${displayIndex}`);
   const taxon = element("span", "specimen-taxon");
+  const meta = element("span", "specimen-meta");
   const status = element("small", "", "Awaiting regional assessment");
   button.append(
     element("span", "specimen-id", `SPECIMEN / ${displayIndex}`),
     image,
     caption,
     taxon,
+    meta,
     status,
   );
   const closeButton = element("button", "specimen-close", "×");
@@ -1867,7 +1858,7 @@ function addSpecimen(data) {
   reopenButton.hidden = false;
   reopenButton.setAttribute("aria-label", `Reopen specimen ${displayIndex} card`);
   byId("specimen-rail").append(button, closeButton, reopenButton);
-  const item = { data, displayIndex, button, closeButton, reopenButton, image, caption, taxon,
+  const item = { data, displayIndex, button, closeButton, reopenButton, image, caption, taxon, meta,
     status, manual: false, closed: true, userClosed: false, suppressClick: false };
   button.hidden = true;
   closeButton.hidden = true;
@@ -2195,6 +2186,12 @@ function renderInspectionGroup(group, primary = false, tieCount = 1, imageUrl = 
   return card;
 }
 let inspectionEvidenceSerial = 0;
+function orderedPlantGroups(assessment) {
+  const confidence = { high: 3, medium: 2, low: 1 };
+  return [...(assessment?.plant_groups || [])].sort((a, b) =>
+    (confidence[b.identification_confidence] || 0) -
+    (confidence[a.identification_confidence] || 0));
+}
 function showInspection(assessment, imageUrl, imageAlt, heading, pendingMessage) {
   toxicityOpinionRequests.forEach((controller) => controller.abort());
   toxicityOpinionRequests.clear();
@@ -2222,10 +2219,7 @@ function showInspection(assessment, imageUrl, imageAlt, heading, pendingMessage)
   if (!assessment) {
     findings.append(element("p", "inspection-empty", pendingMessage));
   } else {
-    const confidence = { high: 3, medium: 2, low: 1 };
-    const groups = [...(assessment.plant_groups || [])].sort((a, b) =>
-      (confidence[b.identification_confidence] || 0) -
-      (confidence[a.identification_confidence] || 0));
+    const groups = orderedPlantGroups(assessment);
     if (groups.length) {
       const highest = groups[0].identification_confidence;
       const tieCount = groups.filter((group) => group.identification_confidence === highest).length;
@@ -2240,6 +2234,7 @@ function showInspection(assessment, imageUrl, imageAlt, heading, pendingMessage)
     if (others.length) {
       const otherHazards = others.filter(inspectionHazard).length;
       const more = element("details", "inspection-more");
+      if (!wholePhoto && otherHazards) more.open = true;
       more.append(element("summary", "",
         `Other reported plant groups (${others.length})${otherHazards ? ` · ${otherHazards} potential hazard${otherHazards === 1 ? "" : "s"}` : ""}`));
       others.forEach((group) => more.append(renderInspectionGroup(group, false, 1, imageUrl)));

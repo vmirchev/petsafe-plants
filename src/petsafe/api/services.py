@@ -544,7 +544,7 @@ async def segment_and_assess(
     class_names: list[str],
     prompt: str = "flower head",
     emit: ProgressCallback | None = None,
-) -> tuple[list[SegmentAssessment], dict[str, int]]:
+) -> tuple[list[SegmentAssessment], dict[str, Any]]:
     """Filter SAM masks before asking Muse Spark about informative crops."""
     api_key = os.getenv("MODEL_API_KEY")
     if not api_key:
@@ -575,14 +575,32 @@ async def segment_and_assess(
     names = {name.casefold() for name in class_names}
     candidates: list[MaskCandidate] = []
     mask_count = 0
+    mask_records: list[dict[str, Any]] = []
     for record in result.records:
         if getattr(record, "kind", None) != "mask":
             continue
         mask_count += 1
+        raw_confidence = getattr(record, "confidence", None)
+        try:
+            confidence = float(raw_confidence) if raw_confidence is not None else None
+        except (TypeError, ValueError):
+            confidence = None
+        if confidence is not None and not np.isfinite(confidence):
+            confidence = None
+        mask_records.append({
+            "object_id": str(record.object_id),
+            "bounds": [float(record.bounds.left), float(record.bounds.top),
+                       float(record.bounds.right), float(record.bounds.bottom)],
+            "mask_size": [int(record.mask.width), int(record.mask.height)],
+            "confidence": confidence,
+        })
         candidate = _mask_candidate(image, record)
         if candidate is not None:
             candidates.append(candidate)
     selected = _select_mask_candidates(candidates, image.width * image.height)
+    selected_ids = {candidate.object_id for candidate in selected}
+    for record in mask_records:
+        record["selected_for_reassessment"] = record["object_id"] in selected_ids
     segments: list[SegmentAssessment] = []
     crops = []
     for candidate in selected:
@@ -636,4 +654,6 @@ async def segment_and_assess(
         if emit:
             await emit("region_assessed", segments[-1].model_dump(mode="json"))
     return segments, {"mask_count": mask_count, "filtered_count": mask_count - len(selected),
-                      "assessed_count": len(segments)}
+                      "assessed_count": len(segments),
+                      "sam_response": {"model": SAM_MODEL, "prompt": prompt,
+                                       "mask_count": mask_count, "mask_records": mask_records}}
