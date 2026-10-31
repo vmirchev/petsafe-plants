@@ -7,9 +7,9 @@
     <meta name="description" content="Investigate plants with Muse Spark, optional SAM segmentation, and source-backed pet toxicity references.">
     <title>PetSafe Plants · Botanical Intelligence Laboratory</title>
     <link rel="stylesheet" href="/styles.css?v=laboratory-5">
-    <link rel="stylesheet" href="/laboratory.css?v=63">
+    <link rel="stylesheet" href="/laboratory.css?v=75">
   </head>
-  <body class="muse-only" data-flow="muse">
+  <body class="muse-only" data-flow="muse" data-app-env="pending">
     <header class="topbar">
       <a class="brand" href="/" aria-label="PetSafe Plants home">
         <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M24.8 6.5C15.2 6.6 8 10.7 8 18.2c0 4.2 3 7 6.6 7 7 0 10.3-9.4 10.2-18.7Z" fill="currentColor"/><path d="M7 26c3.5-6.5 8.2-10 14.2-13" stroke="#f4f7f1" stroke-width="1.5" stroke-linecap="round"/></svg></span>
@@ -33,7 +33,7 @@
       </section>
 
       <section class="workspace" aria-label="Plant image and scan settings">
-        <div class="workspace-topline"><div><span class="step-number">01</span><span id="workspace-step-label" class="section-label">ADD A PHOTO</span></div><div id="scene-overview" class="scene-overview" aria-live="polite" aria-label="Investigation summary"></div><div class="canvas-tools"><span class="format-note">JPG · PNG · WEBP <i>·</i> UP TO 12 MB</span><button id="expand-canvas" class="canvas-size-button" type="button" aria-pressed="false" disabled>Expand canvas</button><button id="fullscreen-canvas" class="canvas-size-button" type="button" aria-pressed="false" disabled>Full screen</button></div></div>
+        <div class="workspace-topline"><div><span class="step-number">01</span><span id="workspace-step-label" class="section-label">ADD A PHOTO</span></div><div id="scene-overview" class="scene-overview" aria-live="polite" aria-label="Investigation summary"></div><div class="canvas-tools"><span class="format-note">JPG · PNG · WEBP <i>·</i> UP TO 12 MB</span><button id="close-all-specimens" class="canvas-size-button" type="button" title="Close specimen cards; click a numbered marker to reopen" hidden>Close all cards</button><button id="expand-canvas" class="canvas-size-button" type="button" aria-pressed="false" disabled>Expand canvas</button><button id="fullscreen-canvas" class="canvas-size-button" type="button" aria-pressed="false" disabled>Full screen</button></div></div>
         <div class="workspace-grid">
           <div id="dropzone" class="dropzone">
             <input id="image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
@@ -57,8 +57,8 @@
               <section id="region-progress" class="region-progress" hidden aria-live="polite">
                 <span class="eyebrow">INVESTIGATION CONTINUES</span>
                 <strong id="region-progress-title">Checking selected specimens</strong>
-                <p id="region-progress-detail"></p>
                 <p id="region-progress-hazard" class="early-hazard" hidden></p>
+                <p id="region-progress-detail"></p>
               </section>
               <section id="photo-guidance" class="photo-guidance" aria-live="polite" hidden>
                 <span class="photo-guidance-kicker">NEXT PHOTO · CLOSER VIEW</span>
@@ -67,6 +67,7 @@
                 <p id="photo-guidance-count" class="photo-guidance-count" hidden></p>
                 <p class="photo-guidance-label">PHOTO TO TAKE</p>
                 <ul id="photo-guidance-instructions" class="photo-guidance-instructions"></ul>
+                <details id="photo-guidance-more" class="photo-guidance-more" hidden><summary id="photo-guidance-more-label">Show more photo suggestions</summary><ul id="photo-guidance-more-instructions" class="photo-guidance-instructions"></ul></details>
                 <details id="photo-guidance-why" class="photo-guidance-why" hidden><summary>Why this photo?</summary><p id="photo-guidance-reason"></p></details>
                 <p id="photo-guidance-pending" class="photo-guidance-pending" hidden><span class="photo-guidance-pending-dot" aria-hidden="true"></span><span>Scan continues · More findings may arrive</span></p>
                 <p id="photo-guidance-hazard" class="early-hazard" hidden></p>
@@ -75,7 +76,7 @@
               <button id="photo-guidance-restore" class="photo-guidance-restore" type="button" hidden>Next photo requested ↗</button>
               <div class="scan-readout" aria-live="polite"><span class="readout-dot"></span><span id="scan-message">PHOTO READY</span></div>
               <button id="remove-image" class="icon-button remove-button" type="button" aria-label="Remove image">×</button>
-              <svg id="specimen-connection" aria-hidden="true"><line class="connection-halo"/><line class="connection-path"/><circle class="connection-origin" r="5"/><circle class="connection-end" r="4"/></svg>
+              <svg id="specimen-connection" aria-hidden="true"><line/></svg>
               <section id="specimen-workspace" class="specimen-workspace" hidden aria-label="SAM plant specimens">
                 <div class="specimen-heading"><div><p class="eyebrow">SAM 3.1 / SPECIMENS</p><h2>A closer look.</h2></div><p id="specimen-count"></p></div>
                 <p id="specimen-hint" class="specimen-hint">Drag a specimen · click a marker to reopen</p>
@@ -130,6 +131,6 @@
       <dialog id="specimen-dialog" aria-label="Plant specimen inspection"><button id="close-specimen" class="icon-button" aria-label="Close inspection">×</button><div id="specimen-detail"></div><button id="dialog-new-plant" class="report-next-button dialog-next-button" type="button" hidden>Investigate another plant ↗</button></dialog>
       <footer class="disclaimer"><span class="disclaimer-icon" aria-hidden="true">!</span><p><strong>Experimental results, not safety advice.</strong> Plant identities and region boundaries can be wrong. Toxicity labels are source-backed references for a possible match, not a diagnosis or guarantee of safety. Contact a veterinarian if ingestion is suspected.</p></footer>
     </main>
-    <script src="/app.js?v=laboratory-71" type="module"></script>
+    <script src="/app.js?v=laboratory-81" type="module"></script>
   </body>
 </html>

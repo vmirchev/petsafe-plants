@@ -33,6 +33,33 @@ from petsafe.api.services import (
     segment_and_assess,
 )
 
+APP_ENV = os.getenv("PETSAFE_APP_ENV", "development").strip().lower()
+if APP_ENV not in {"development", "production"}:
+    raise ValueError("PETSAFE_APP_ENV must be 'development' or 'production'.")
+
+
+def _client_payload(value):
+    """Omit diagnostic model metadata from production API responses."""
+    if APP_ENV != "production":
+        return value
+    if isinstance(value, dict):
+        return {
+            key: _client_payload(item)
+            for key, item in value.items()
+            if key not in {"raw_meta_response", "api_usage", "cache_hit"}
+        }
+    if isinstance(value, list):
+        return [_client_payload(item) for item in value]
+    return value
+
+
+def _client_model(value):
+    """Apply the same production filtering to non-streaming endpoints."""
+    if APP_ENV != "production":
+        return value
+    return type(value).model_validate(_client_payload(value.model_dump(mode="json")))
+
+
 app = FastAPI(
     title="PetSafe Plants Inference API",
     version="0.1.0",
@@ -41,6 +68,9 @@ app = FastAPI(
         "plus optional SAM 3.1 flow, then attach source-backed toxicity lookups. "
         "Results are experimental and are not veterinary advice."
     ),
+    docs_url=None if APP_ENV == "production" else "/docs",
+    redoc_url=None if APP_ENV == "production" else "/redoc",
+    openapi_url=None if APP_ENV == "production" else "/openapi.json",
 )
 origins = [origin.strip() for origin in os.getenv(
     "PETSAFE_CORS_ORIGINS", "http://localhost:3000,http://localhost:5173"
@@ -57,11 +87,19 @@ app.add_middleware(
 @app.get("/healthz")
 async def health() -> dict[str, str | int]:
     """Report service readiness without exposing credentials."""
+    if APP_ENV == "production":
+        return {"status": "ok"}
     return {
         "status": "ok",
         "trained_artifacts": "available" if available_models() else "missing",
         "max_separate_plants": MAX_SEPARATE_PLANTS,
     }
+
+
+@app.get("/api/config")
+async def frontend_config() -> dict[str, str]:
+    """Tell the static client which presentation mode the server selected."""
+    return {"environment": APP_ENV}
 
 
 @app.get("/api/models")
@@ -102,7 +140,7 @@ async def trained_flow(
     name = _model_name(model_name)
     image, _normalized = await _read_image(image_file)
     try:
-        return await predict_trained_flow(name, image)
+        return _client_model(await predict_trained_flow(name, image))
     except FileNotFoundError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except (RuntimeError, OSError, ValueError) as exc:
@@ -114,7 +152,7 @@ async def muse_spark_flow(image_file: UploadFile = File(...)) -> PlantAssessment
     """Run Muse Spark on the original image and return its structured JSON."""
     _image, normalized = await _read_image(image_file)
     try:
-        return await assess_with_spark(normalized)
+        return _client_model(await assess_with_spark(normalized))
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Muse Spark request failed: {exc}") from exc
 
@@ -152,7 +190,7 @@ async def compare_flows(
         raise HTTPException(status_code=422, detail="sam_prompt must be 'auto', 'flower', or 'plant'.")
     name = _model_name(model_name)
     image, normalized = await _read_image(image_file)
-    return await _run_comparison(image, normalized, name, force_sam, skip_sam, sam_prompt)
+    return _client_model(await _run_comparison(image, normalized, name, force_sam, skip_sam, sam_prompt))
 
 
 async def _run_comparison(
@@ -325,7 +363,7 @@ async def stream_muse(
         queue: asyncio.Queue[tuple[str, dict]] = asyncio.Queue()
 
         async def emit(event: str, data: dict) -> None:
-            await queue.put((event, data))
+            await queue.put((event, _client_payload(data)))
 
         async def run():
             try:
@@ -387,7 +425,7 @@ async def stream_comparison(
         queue: asyncio.Queue[tuple[str, dict]] = asyncio.Queue()
 
         async def emit(event: str, data: dict) -> None:
-            await queue.put((event, data))
+            await queue.put((event, _client_payload(data)))
 
         async def run():
             try:

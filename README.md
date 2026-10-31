@@ -203,13 +203,15 @@ cp .env.example .env
 
 Set `MODEL_API_KEY` and `PETSAFE_RUNS_HOST_DIR` in `.env`. The latter must point to the run root containing the model folders, for example `/path/to/drive/AI/meta-global-hackaton/runs/plant_export_v20261026_2355546_holdout10_seed42`. Build the API once and start it:
 
+Set `PETSAFE_APP_ENV=development` to keep the Developer Inspector, model details, token usage, raw Meta response, API status control, and comparison page. Set `PETSAFE_APP_ENV=production` for the public-facing Muse experience: the comparison link and technical report are hidden, `/compare.html` redirects to the main page, API docs are disabled, and raw Meta response content, usage, and cache diagnostics are removed from responses. The user-facing plant, toxicity, source, follow-up, and safety information remains available. This presentation mode is **not access control**: inference endpoints remain callable, so add authentication and rate limiting before exposing the API publicly.
+
 ```bash
 docker compose up --build -d api
 ```
 
-If the API image already exists, apply the `web/` and `src/` bind mounts once with `docker compose up -d --force-recreate --no-deps api`. After that, edit files in `web/` and refresh the browser for UI-only changes. Restart with `docker compose restart api` after Python source changes so the process loads the new code. Rebuild with `docker compose up --build -d api` when dependencies or the Dockerfile change. A 405 from `/api/flows/muse-stream` means an older API process is still serving requests; recreate or restart the container after applying the source mount.
+If the API image already exists, apply the `web/` and `src/` bind mounts once with `docker compose up -d --force-recreate --no-deps api`. After that, edit files in `web/` and refresh the browser for UI-only changes. Restart with `docker compose restart api` after Python source changes so the process loads the new code. Recreate the container with `docker compose up -d --force-recreate --no-deps api` after changing `PETSAFE_APP_ENV` in `.env`; a restart alone does not reload Compose environment variables. Rebuild with `docker compose up --build -d api` when dependencies or the Dockerfile change. A 405 from `/api/flows/muse-stream` means an older API process is still serving requests; recreate or restart the container after applying the source mount.
 
-The Muse web client is at `http://127.0.0.1:8000/`, the comparison client is at `http://127.0.0.1:8000/compare.html`, and the interactive API docs are at `http://127.0.0.1:8000/docs`. Compose persists Hugging Face and Torch model caches in a Docker volume. Stop the service with `docker compose down`. The model run directory is mounted read-only for the comparison flow, and credentials are passed at runtime rather than baked into the image.
+The Muse web client is at `http://127.0.0.1:8000/`. In development, the comparison client is at `http://127.0.0.1:8000/compare.html` and the interactive API docs are at `http://127.0.0.1:8000/docs`. Compose persists Hugging Face and Torch model caches in a Docker volume. Stop the service with `docker compose down`. The model run directory is mounted read-only for the comparison flow, and credentials are passed at runtime rather than baked into the image.
 
 The container currently targets CPU inference. The first build is large because it includes PyTorch, torchvision, and Transformers; first model use also downloads pretrained encoder weights into the cache volume.
 

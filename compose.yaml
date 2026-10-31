@@ -5,6 +5,7 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
+      PETSAFE_APP_ENV: ${PETSAFE_APP_ENV:-development}
       MODEL_API_KEY: ${MODEL_API_KEY:?Set MODEL_API_KEY in .env}
       HF_TOKEN: ${HF_TOKEN:-}
       PETSAFE_RUNS_DIR: /models

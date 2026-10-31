@@ -42,6 +42,7 @@ const els = {
   photoGuidanceButton: byId("photo-guidance-button"),
   photoGuidanceRestore: byId("photo-guidance-restore"),
   workspaceStepLabel: byId("workspace-step-label"),
+  closeAllSpecimens: byId("close-all-specimens"),
   expandCanvas: byId("expand-canvas"),
   fullscreenCanvas: byId("fullscreen-canvas"),
   removeImage: byId("remove-image"),
@@ -86,6 +87,28 @@ apiInput.id = "api-base-url";
 apiInput.value = localStorage.getItem("petsafe-api-base") || apiDefault;
 document.body.append(apiInput);
 
+let appConfigAvailable = false;
+async function loadAppConfig() {
+  try {
+    const response = await fetch("/api/config", { cache: "no-store" });
+    if (!response.ok) throw new Error("App configuration unavailable");
+    const config = await response.json();
+    if (!["development", "production"].includes(config.environment))
+      throw new Error("Invalid app environment");
+    appConfigAvailable = true;
+    document.body.dataset.appEnv = config.environment;
+    if (config.environment === "production") {
+      apiInput.value = apiDefault;
+      if (!museOnly) window.location.replace("/");
+    }
+  } catch {
+    // Keep diagnostic UI hidden if the server cannot confirm its mode.
+    document.body.dataset.appEnv = "production";
+    showError("The investigation service is unavailable. Refresh after the API is running.");
+  }
+}
+const appConfigReady = loadAppConfig();
+
 function apiUrl(path) {
   return `${apiInput.value.trim().replace(/\/+$/, "")}${path}`;
 }
@@ -99,6 +122,8 @@ function setApiStatus(text, state) {
 }
 
 async function loadModels() {
+  if (!appConfigAvailable) return;
+  if (document.body.dataset.appEnv === "production" && !museOnly) return;
   try {
     if (museOnly) {
       const response = await fetch(apiUrl("/healthz"));
@@ -129,7 +154,9 @@ async function loadModels() {
   } catch (error) {
     setApiStatus("API unavailable", "offline");
     showError(
-      `Could not reach the inference API at ${apiInput.value}. Start the API and refresh this page. ${error.message}`,
+      document.body.dataset.appEnv === "development"
+        ? `Could not reach the inference API at ${apiInput.value}. Start the API and refresh this page. ${error.message}`
+        : "The investigation service is unavailable. Please try again later.",
     );
   }
 }
@@ -717,6 +744,12 @@ function renderSegmentation(result) {
 
 async function compare() {
   if (!selectedFile) return;
+  await appConfigReady;
+  if (!appConfigAvailable) {
+    showError("The investigation service is unavailable. Refresh after the API is running.");
+    return;
+  }
+  if (document.body.dataset.appEnv === "production" && !museOnly) return;
   cancelInvestigation(true);
   questionOrder = shuffledQuestionOrder();
   const request = ++requestGeneration;
@@ -790,9 +823,9 @@ async function compare() {
     if (request !== requestGeneration || error.name === "AbortError") return;
     controller.abort();
     setInvestigationState("error");
-    showError(
-      error.message || "The investigation could not finish. Please retry.",
-    );
+    showError(document.body.dataset.appEnv === "development"
+      ? error.message || "The investigation could not finish. Please retry."
+      : "The investigation could not finish. Please try again.");
   } finally {
     if (request === requestGeneration) {
       activeRequest = null;
@@ -854,6 +887,7 @@ els.photoGuidanceRestore.addEventListener("click", () => {
   summaryPanelOpen = false;
   els.photoGuidanceRestore.hidden = true;
   els.photoGuidance.hidden = false;
+  els.photoGuidance.scrollTop = 0;
   syncFollowupProgress();
   byId("photo-guidance-minimize").focus();
 });
@@ -917,6 +951,7 @@ function setCanvasExpanded(expanded) {
 }
 els.expandCanvas.addEventListener("click", () =>
   setCanvasExpanded(!els.workspace.classList.contains("is-expanded")));
+els.closeAllSpecimens.addEventListener("click", closeAllSpecimenCards);
 els.fullscreenCanvas.addEventListener("click", async () => {
   try {
     if (document.fullscreenElement === els.pageShell) await document.exitFullscreen();
@@ -1008,12 +1043,10 @@ function shuffledQuestionOrder(previousLast) {
   return order;
 }
 let questionOrder = [...questions];
-const thoughtPositions = ["thought-one", "thought-two", "thought-three"];
 const guidedThoughtPositions = ["thought-guided-one", "thought-guided-two", "thought-guided-three"];
-const QUESTION_INTERVAL_MS = 4000;
-const GUIDED_QUESTION_INTERVAL_MS = 5200;
+const QUESTION_INTERVAL_MS = 5200;
 let thoughtSerial = 0;
-let questionMode = null;
+let thoughtRetireTimer = null;
 let layoutAnimation = null;
 function centerPhotoWorkspace(state, keepCentered = false) {
   const centered = Boolean(selectedFile && (keepCentered || !["idle"].includes(state)));
@@ -1090,16 +1123,10 @@ function animateThought(node, entering) {
 }
 function showNextThought() {
   if (!els.dropzone.classList.contains("is-scanning")) return;
-  const guided = questionMode === "guided";
-  const positions = guided
-    ? guidedThoughtPositions.slice(0, window.matchMedia("(max-width: 600px)").matches ? 2 : 3)
-    : thoughtPositions;
+  const positions = guidedThoughtPositions.slice(0, window.matchMedia("(max-width: 600px)").matches ? 2 : 3);
   const position = thoughtSerial % positions.length;
   const old = els.questionLayer.querySelector(`[data-position="${position}"]`);
-  if (old) {
-    if (guided) old.remove();
-    else animateThought(old, false).finally(() => old.remove());
-  }
+  if (old) animateThought(old, false).finally(() => old.remove());
   const bubble = element("span", `thought-bubble ${positions[position]}`, questionOrder[questionIndex]);
   bubble.dataset.position = String(position);
   bubble.style.opacity = motionDisabled() ? "1" : "0";
@@ -1115,9 +1142,18 @@ function showNextThought() {
 function clearThoughts() {
   clearInterval(questionTimer);
   questionTimer = null;
+  clearTimeout(thoughtRetireTimer);
+  thoughtRetireTimer = null;
+  els.questionLayer.classList.remove("is-retiring");
   els.questionLayer.replaceChildren();
   thoughtSerial = 0;
-  questionMode = null;
+}
+function retireThoughts() {
+  clearInterval(questionTimer);
+  questionTimer = null;
+  if (thoughtRetireTimer || !els.questionLayer.childElementCount) return;
+  els.questionLayer.classList.add("is-retiring");
+  thoughtRetireTimer = setTimeout(clearThoughts, 650);
 }
 function syncInvestigationActions() {
   const busy = machine.busy;
@@ -1137,7 +1173,12 @@ function syncInvestigationActions() {
 const followupProgressNote = "More findings from this photo may help with your next shot.";
 function syncFollowupProgress() {
   const ongoing = machine.busy && investigationState !== "presenting";
-  els.photoGuidancePending.hidden = !ongoing || els.photoGuidance.hidden;
+  els.photoGuidancePending.hidden = !followupAnnounced || els.photoGuidance.hidden;
+  els.photoGuidancePending.lastElementChild.textContent = ongoing
+    ? "Scan continues · More findings may arrive"
+    : investigationState === "presenting"
+      ? "Finalizing findings · Next-photo guidance is ready"
+      : "Scan complete · Next-photo guidance is ready";
   els.photoGuidanceRestore.textContent = ongoing
     ? "Next photo · scan continues ↗" : "Next photo requested ↗";
   if (ongoing && !els.photoGuidance.hidden &&
@@ -1233,19 +1274,19 @@ function setInvestigationState(state, keepCentered = false) {
   syncRegionProgress();
   syncEarlyHazard();
   const showQuestions = busy && !["segments_ready", "identifying_regions", "presenting"].includes(state)
-    && !els.workspace.classList.contains("has-specimens") && els.photoGuidance.hidden;
+    && !els.workspace.classList.contains("has-specimens");
   if (showQuestions) {
-    const nextMode = byId("region-progress").hidden ? "free" : "guided";
-    if (!questionTimer || questionMode !== nextMode) {
-      clearThoughts();
-      questionMode = nextMode;
+    if (!questionTimer) {
+      clearTimeout(thoughtRetireTimer);
+      thoughtRetireTimer = null;
+      els.questionLayer.classList.remove("is-retiring");
       showNextThought();
-      if (nextMode === "guided") showNextThought();
-      questionTimer = setInterval(showNextThought,
-        nextMode === "guided" ? GUIDED_QUESTION_INTERVAL_MS : QUESTION_INTERVAL_MS);
+      showNextThought();
+      questionTimer = setInterval(showNextThought, QUESTION_INTERVAL_MS);
     }
   } else {
-    clearThoughts();
+    if (state === "idle" || state === "error") clearThoughts();
+    else retireThoughts();
   }
 }
 function cancelInvestigation(keepCentered = false) {
@@ -1284,8 +1325,13 @@ function resetReport() {
   byId("scene-card").hidden = true;
   byId("scene-card-restore").hidden = true;
   byId("scene-card-link").classList.remove("visible");
+  for (const id of ["photo-guidance", "scene-card", "region-progress"])
+    byId(id).scrollTop = 0;
   lastReport = null;
   specimenRecords.clear();
+  els.closeAllSpecimens.hidden = true;
+  byId("photo-guidance-minimize").firstChild.textContent = "Minimize ";
+  byId("photo-guidance-minimize").setAttribute("aria-label", "Minimize closer-photo panel");
   byId("specimen-rail").replaceChildren();
   document.querySelector(".workspace").classList.remove("has-specimens");
   for (const id of ["specimen-workspace", "followup-panel", "safety-summary", "photo-guidance"])
@@ -1293,6 +1339,7 @@ function resetReport() {
   els.photoGuidanceRestore.hidden = true;
   byId("scene-summary-action").disabled = true;
   els.photoGuidanceWhy.open = false;
+  byId("photo-guidance-more").open = false;
   els.photoGuidancePending.hidden = true;
   els.results.hidden = true;
   byId("specimen-dialog").close();
@@ -1318,7 +1365,7 @@ function handlePipelineEvent(event, data) {
     renderTrained(data);
   if (event === "specimen_ready") {
     selectedRegionCount = Math.max(selectedRegionCount, data.selected_count || 0);
-    clearThoughts();
+    retireThoughts();
     document.querySelector(".workspace").classList.add("has-specimens");
     byId("specimen-workspace").hidden = false;
     byId("specimen-count").textContent =
@@ -1328,7 +1375,7 @@ function handlePipelineEvent(event, data) {
   if (event === "segments_ready") {
     samResponded = true;
     selectedRegionCount = data.regions.length;
-    clearThoughts();
+    retireThoughts();
     document
       .querySelector(".workspace")
       .classList.toggle("has-specimens", data.regions.length > 0);
@@ -1470,6 +1517,7 @@ function positionSceneCardLink() {
 }
 function showSceneCard(assessment) {
   const card = byId("scene-card");
+  const wasHidden = card.hidden;
   const groups = [...(assessment.plant_groups || [])];
   const hazards = groups.filter(inspectionHazard).length;
   const isUnresolved = (group) => !group.toxicity ||
@@ -1486,6 +1534,18 @@ function showSceneCard(assessment) {
     Number(isUnresolved(b)) - Number(isUnresolved(a)));
   for (const group of groups) {
     const row = element("li", `scene-card-row${inspectionHazard(group) ? " hazard" : isUnresolved(group) ? " unknown" : ""}`);
+    const matchingIds = [...specimenRecords].filter(([, item]) =>
+      (item.data.assessment?.plant_groups || []).some((regionalGroup) =>
+        samePlantIdentity(group, regionalGroup))).map(([id]) => id);
+    if (matchingIds.length) {
+      row.classList.add("is-locatable");
+      row.tabIndex = 0;
+      row.setAttribute("aria-label", `${group.plant_identification || "Plant"}; highlight matching image region`);
+      row.addEventListener("pointerenter", () => highlightSummaryRegions(matchingIds));
+      row.addEventListener("pointerleave", () => highlightSpecimen(null));
+      row.addEventListener("focus", () => highlightSummaryRegions(matchingIds));
+      row.addEventListener("blur", () => highlightSpecimen(null));
+    }
     const identity = element("div", "scene-card-identity");
     identity.append(
       element("span", "scene-card-name", group.plant_identification || "Unidentified plant"),
@@ -1542,6 +1602,7 @@ function showSceneCard(assessment) {
     actions,
   );
   card.hidden = sceneCardMinimized;
+  if (wasHidden && !card.hidden) card.scrollTop = 0;
   byId("scene-card-restore").hidden = !sceneCardMinimized;
   if (sceneCardMinimized) byId("scene-card-link").classList.remove("visible");
   else requestAnimationFrame(positionSceneCardLink);
@@ -1580,6 +1641,21 @@ function placeSpecimens() {
   if (!els.imageStage.clientWidth) return;
   const stageWidth = els.imageStage.clientWidth;
   const stageHeight = els.imageStage.clientHeight;
+  const overlap = (a, b) => Math.max(0, Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left))
+    * Math.max(0, Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top));
+  let guide = null;
+  if (!els.photoGuidance.hidden) {
+    const stage = els.imageStage.getBoundingClientRect();
+    const panel = els.photoGuidance.getBoundingClientRect();
+    guide = {
+      left: (panel.left - stage.left) * stageWidth / stage.width,
+      top: (panel.top - stage.top) * stageHeight / stage.height,
+      width: panel.width * stageWidth / stage.width,
+      height: panel.height * stageHeight / stage.height,
+    };
+  }
+  const guideKey = guide
+    ? [guide.left, guide.top, guide.width, guide.height].map(Math.round).join(":") : "";
   els.imageStage.classList.toggle(
     "compact-specimens",
     els.imageStage.clientHeight < 560,
@@ -1601,7 +1677,7 @@ function placeSpecimens() {
       return;
     }
     if (item.positioned && item.stageWidth === stageWidth &&
-        item.stageHeight === stageHeight) {
+        item.stageHeight === stageHeight && (!guide || item.guideKey === guideKey)) {
       const position = clampSpecimen(item.button,
         parseFloat(item.button.style.left) || 0,
         parseFloat(item.button.style.top) || 0);
@@ -1628,22 +1704,23 @@ function placeSpecimens() {
       for (let left = 5; left <= stageWidth - width - 5; left += Math.max(48, width / 2))
         candidates.push([left, top]);
     }
-    const overlap = (a, b) => Math.max(0, Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left))
-      * Math.max(0, Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top));
     const scored = candidates.map(([left, top]) => {
       const p = clampSpecimen(item.button, left, top);
       const rect = { ...p, width, height };
       const distance = Math.hypot(p.left + width / 2 - centerX, p.top + height / 2 - centerY);
       const cardOverlap = placed.reduce((sum, other) => sum + overlap(rect, other), 0);
-      return { ...p, cardOverlap, score: distance + overlap(rect, box) * 4 + cardOverlap * 1000 };
+      const guideOverlap = guide ? overlap(rect, guide) : 0;
+      return { ...p, cardOverlap, guideOverlap,
+        score: distance + overlap(rect, box) * 4 + cardOverlap * 1000 + guideOverlap * 400 };
     });
-    const clear = scored.filter((candidate) => candidate.cardOverlap === 0);
+    const clear = scored.filter((candidate) => candidate.cardOverlap === 0 && candidate.guideOverlap === 0);
     const position = (clear.length ? clear : scored).sort((a, b) => a.score - b.score)[0];
     item.button.style.left = `${position.left}px`;
     item.button.style.top = `${position.top}px`;
     item.positioned = true;
     item.stageWidth = stageWidth;
     item.stageHeight = stageHeight;
+    item.guideKey = guideKey;
     positionSpecimenControls(item);
     placed.push({ ...position, width, height });
   });
@@ -1705,12 +1782,28 @@ function enableSpecimenDrag(id, item) {
   });
 }
 function updateSpecimenCardCount() {
-  if (!samResponded) return;
   const open = [...specimenRecords.values()].filter((item) => !item.closed).length;
+  els.closeAllSpecimens.hidden = open === 0;
+  if (!samResponded) return;
   const marked = specimenRecords.size - open;
   byId("specimen-count").textContent = marked
     ? `${open} open · click ${marked} markers`
     : `${open} open`;
+}
+function closeAllSpecimenCards() {
+  clearInterval(specimenPreviewTimer);
+  specimenPreviewTimer = null;
+  for (const item of specimenRecords.values()) {
+    item.closed = true;
+    item.userClosed = true;
+    item.button.hidden = true;
+    item.closeButton.hidden = true;
+    item.reopenButton.hidden = false;
+  }
+  highlightSpecimen(null);
+  placeSpecimens();
+  updateSpecimenCardCount();
+  specimenRecords.values().next().value?.reopenButton.focus({ preventScroll: true });
 }
 function closeSpecimenCard(id) {
   const item = specimenRecords.get(id);
@@ -1802,6 +1895,9 @@ function addSpecimen(data) {
     };
   }, { once: true });
   specimenRecords.set(id, item);
+  byId("photo-guidance-minimize").firstChild.textContent = "Inspect cards ";
+  byId("photo-guidance-minimize").setAttribute("aria-label",
+    "Minimize closer-photo panel to inspect specimen cards");
   placeSpecimens();
   enableSpecimenDrag(id, item);
   button.addEventListener("pointerenter", () => {
@@ -1879,6 +1975,39 @@ function addSpecimen(data) {
     { once: true },
   );
 }
+function samePlantIdentity(one, two) {
+  const normalize = (value) => value?.trim().replace(/\s+/g, " ").toLocaleLowerCase();
+  const matchedClass = (group) => normalize(group.toxicity?.matched_class);
+  if (matchedClass(one) && matchedClass(two)) return matchedClass(one) === matchedClass(two);
+  const scientific = normalize(one.scientific_name);
+  return Boolean(scientific && !/^(unknown|unidentified|uncertain|not identified|none)\b/.test(scientific) &&
+    scientific === normalize(two.scientific_name));
+}
+function showSourceRegion(item, overlay) {
+  const box = sourceBox(item.data.bounds);
+  const image = element("img", "source-mask");
+  image.src = item.data.crop_data_url;
+  Object.assign(image.style, {
+    left: `${box.left}px`, top: `${box.top}px`,
+    width: `${box.width}px`, height: `${box.height}px`,
+  });
+  overlay.append(image);
+  const bounds = element("span", "source-bounds");
+  Object.assign(bounds.style, {
+    left: `${box.left}px`, top: `${box.top}px`,
+    width: `${box.width}px`, height: `${box.height}px`,
+  });
+  overlay.append(bounds);
+  return box;
+}
+function highlightSummaryRegions(ids) {
+  highlightSpecimen(null);
+  const overlay = byId("source-region");
+  for (const id of ids) {
+    const item = specimenRecords.get(id);
+    if (item?.data.bounds) showSourceRegion(item, overlay);
+  }
+}
 function highlightSpecimen(id) {
   const overlay = byId("source-region");
   const connection = byId("specimen-connection");
@@ -1890,22 +2019,7 @@ function highlightSpecimen(id) {
   }
   const item = specimenRecords.get(id);
   if (!item) return;
-  const box = sourceBox(item.data.bounds);
-  const image = element("img", "source-mask");
-  image.src = item.data.crop_data_url;
-  Object.assign(image.style, {
-    left: `${box.left}px`,
-    top: `${box.top}px`,
-    width: `${box.width}px`,
-    height: `${box.height}px`,
-  });
-  overlay.append(image);
-  const bounds = element("span", "source-bounds");
-  Object.assign(bounds.style, {
-    left: `${box.left}px`, top: `${box.top}px`,
-    width: `${box.width}px`, height: `${box.height}px`,
-  });
-  overlay.append(bounds);
+  const box = showSourceRegion(item, overlay);
   if (item.closed) return;
   const stage = els.imageStage.getBoundingClientRect();
   const ratioX = stage.width / els.imageStage.clientWidth;
@@ -1917,18 +2031,11 @@ function highlightSpecimen(id) {
   const startY = box.top + box.height / 2;
   const endX = (target.left + target.width / 2 - stage.left) / ratioX;
   const endY = (target.top + 20 - stage.top) / ratioY;
-  connection.querySelectorAll("line").forEach((line) => {
-    line.setAttribute("x1", startX);
-    line.setAttribute("y1", startY);
-    line.setAttribute("x2", endX);
-    line.setAttribute("y2", endY);
-  });
-  const origin = connection.querySelector(".connection-origin");
-  origin.setAttribute("cx", startX);
-  origin.setAttribute("cy", startY);
-  const end = connection.querySelector(".connection-end");
-  end.setAttribute("cx", endX);
-  end.setAttribute("cy", endY);
+  const line = connection.querySelector("line");
+  line.setAttribute("x1", startX);
+  line.setAttribute("y1", startY);
+  line.setAttribute("x2", endX);
+  line.setAttribute("y2", endY);
   connection.style.display = "block";
 }
 function specimenAtPhotoPoint(event, closedOnly = false) {
@@ -2269,15 +2376,27 @@ function updateFollowup(assessment) {
     ? `${requests.find((item) => item.separate_plant_count > maxSeparatePlants).separate_plant_count} separate plants reported in this photo`
     : requests.length > 1 ? "Several plant views need another photo."
       : "";
+  const suggestions = instructions.length ? instructions : [
+    "Take a closer photo of one plant with its leaves and stem visible.",
+  ];
+  const visibleSuggestions = suggestions.slice(0, 3);
+  const remainingSuggestions = suggestions.slice(3);
   els.photoGuidanceInstructions.replaceChildren(
-    ...(instructions.length ? instructions : [
-      "Take a closer photo of one plant with its leaves and stem visible.",
-    ]).map((instruction) => element("li", "", instruction)),
+    ...visibleSuggestions.map((instruction) => element("li", "", instruction)),
   );
-  els.photoGuidanceInstructions.classList.toggle("single-instruction", instructions.length <= 1);
+  els.photoGuidanceInstructions.classList.toggle("single-instruction", visibleSuggestions.length === 1);
+  const more = byId("photo-guidance-more");
+  more.hidden = remainingSuggestions.length === 0;
+  byId("photo-guidance-more-label").textContent =
+    `Show ${remainingSuggestions.length} more photo suggestion${remainingSuggestions.length === 1 ? "" : "s"}`;
+  byId("photo-guidance-more-instructions").replaceChildren(
+    ...remainingSuggestions.map((instruction) => element("li", "", instruction)),
+  );
   els.photoGuidanceWhy.hidden = reasons.length === 0;
   els.photoGuidanceReason.textContent = reasons.join(" ");
+  const wasHidden = els.photoGuidance.hidden;
   els.photoGuidance.hidden = summaryPanelOpen || followupMinimized;
+  if (wasHidden && !els.photoGuidance.hidden) els.photoGuidance.scrollTop = 0;
   els.photoGuidanceRestore.hidden = summaryPanelOpen || !followupMinimized;
   byId("region-progress").hidden = true;
   syncFollowupProgress();
@@ -2290,6 +2409,7 @@ function updateFollowup(assessment) {
   byId("followup-instructions").textContent =
     instructions.join(" ") ||
     "More photographic evidence is needed to resolve this investigation.";
+  if (specimenRecords.size) requestAnimationFrame(placeSpecimens);
 }
 function archiveInvestigation() {
   if ((!lastReport && !sceneAssessments.length) || !selectedFile) return;
@@ -2349,4 +2469,4 @@ reducedMotion.addEventListener("change", syncMotionControl);
 syncMotionControl();
 resetOverview();
 setInvestigationState("idle");
-loadModels();
+appConfigReady.then(loadModels);
