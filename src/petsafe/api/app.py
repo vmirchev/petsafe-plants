@@ -93,7 +93,7 @@ app.add_middleware(
 
 @app.exception_handler(MetaUnavailable)
 async def meta_unavailable_handler(_request: Request, exc: MetaUnavailable) -> JSONResponse:
-    return JSONResponse(status_code=429 if exc.code == "quota_exceeded" else 503,
+    return JSONResponse(status_code=429 if exc.code in {"quota_exceeded", "lifetime_quota_exceeded"} else 503,
                         content={"code": exc.code, "detail": exc.code})
 
 
@@ -119,7 +119,11 @@ async def frontend_config() -> dict[str, str]:
 async def availability() -> dict:
     """Report whether new paid Meta calls can be made."""
     current = stats()
-    code = "api_disabled" if not current["enabled"] else "quota_exceeded" if not current["remaining"] else "available"
+    code = (
+        "api_disabled" if not current["enabled"] else
+        "lifetime_quota_exceeded" if not current["lifetime_remaining"] else
+        "quota_exceeded" if not current["remaining"] else "available"
+    )
     return {"code": code, "github_url": "https://github.com/vmirchev/petsafe-plants",
             "demo_url": os.getenv("PETSAFE_DEMO_URL", "https://www.youtube.com/")}
 
@@ -353,15 +357,15 @@ async def _run_muse_path(
     if spark.separate_plant_count > MAX_SEPARATE_PLANTS:
         reason = (
             f"Muse Spark reported {spark.separate_plant_count} separate plants "
-            "in this photo. Inspect one plant at a time in closer photos."
+            "in this photo; SAM is skipped to keep the inspection focused."
         )
         spark = spark.model_copy(update={
             "suggest_segmentation": False,
             "segmentation_reason": reason,
             "another_photo_needed": True,
             "photo_instructions": (
-                "Take a closer, sharp photo of one individual plant, including its flowers, "
-                "leaves, and stem. Repeat for the other plants."
+                "Take a closer photo of one individual plant, including its flowers and leaves. "
+                "Assess the remaining plants one at a time."
             ),
             "photo_reason": reason,
         })
@@ -422,15 +426,6 @@ async def _run_muse_path(
                 segments=segments,
                 **counts,
             )
-            if not segments and any(
-                group.needs_inspection or group.identification_confidence == "low"
-                for group in spark.plant_groups
-            ) and not spark.another_photo_needed:
-                spark = spark.model_copy(update={
-                    "another_photo_needed": True,
-                    "photo_instructions": "Take a closer, sharper photo showing the uncertain plant and its leaves or flowers.",
-                    "photo_reason": "No useful isolated region was available for another visual assessment.",
-                })
         except MetaUnavailable:
             raise
         except Exception as exc:

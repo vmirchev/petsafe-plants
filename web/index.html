@@ -7,7 +7,7 @@
     <meta name="description" content="Investigate plants with Muse Spark, optional SAM segmentation, and source-backed pet toxicity references.">
     <title>PetSafe Plants · Botanical Intelligence Laboratory</title>
     <link rel="stylesheet" href="/styles.css?v=laboratory-5">
-    <link rel="stylesheet" href="/laboratory.css?v=78">
+    <link rel="stylesheet" href="/laboratory.css?v=82">
   </head>
   <body class="muse-only" data-flow="muse" data-app-env="pending">
     <header class="topbar">
@@ -90,8 +90,9 @@
             <div class="sample-gallery-heading"><strong>Try an investigation</strong><span>Choose a sample photo to start</span></div>
             <div class="sample-gallery-grid">
               <button type="button" class="sample-choice" data-sample="/demo/single_cyclamen.png"><img src="/demo/single_cyclamen.png" alt="One flowering plant" loading="lazy"><span>Single plant</span></button>
+              <button type="button" class="sample-choice" data-sample="/demo/multiple_potted_plants.png"><img src="/demo/multiple_potted_plants.png" alt="Three potted plants on a windowsill" loading="lazy"><span>Multiple potted plants</span></button>
               <button type="button" class="sample-choice" data-sample="/demo/mixed_cat_safety_bouquet.png"><img src="/demo/mixed_cat_safety_bouquet.png" alt="Bouquet with several flower types" loading="lazy"><span>Mixed bouquet</span></button>
-              <button type="button" class="sample-choice" data-sample="/demo/ambiguous_flower.png"><img src="/demo/ambiguous_flower.png" alt="Close flower with obscured details" loading="lazy"><span>Hard to identify</span></button>
+              <button type="button" class="sample-choice" data-sample="/demo/cyclamen_african_violet_overlap.png"><img src="/demo/cyclamen_african_violet_overlap.png" alt="Overlapping pink cyclamen and purple African violet flowers" loading="lazy"><span>Overlapping plants</span></button>
             </div>
             <p>AI-generated demo photos. Plant identities and pet safety need independent verification.</p>
           </div>
@@ -132,6 +133,6 @@
       <dialog id="specimen-dialog" aria-label="Plant specimen inspection"><button id="close-specimen" class="icon-button" aria-label="Close inspection">×</button><div id="specimen-detail"></div><button id="dialog-new-plant" class="report-next-button dialog-next-button" type="button" hidden>Investigate another plant ↗</button></dialog>
       <footer class="disclaimer"><span class="disclaimer-icon" aria-hidden="true">!</span><p><strong>Experimental results, not safety advice.</strong> Plant identities and region boundaries can be wrong. Toxicity labels are source-backed references for a possible match, not a diagnosis or guarantee of safety. Contact a veterinarian if ingestion is suspected.</p></footer>
     </main>
-    <script src="/app.js?v=laboratory-91" type="module"></script>
+    <script src="/app.js?v=laboratory-99" type="module"></script>
   </body>
 </html>

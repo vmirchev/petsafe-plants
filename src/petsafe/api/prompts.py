@@ -115,15 +115,31 @@ ADDITIONAL PHOTO DECISION
 Determine whether another photograph would materially improve
 plant identification.
 
+If one main flower or plant is clearly focused and its visible features
+support a useful identification, assess it from this photo. Flowers or
+leaves cropped by the image edges do not, by themselves, require another
+photo. Do not treat edge fragments as separate plant types unless visible
+evidence clearly shows they belong to a different type. Do not request
+another photo merely to improve confidence or obtain a perfect view of
+the main plant; report any remaining uncertainty in its identification.
+
+The exception is a clearly distinct plant whose important identifying
+features are genuinely obscured, so it cannot be meaningfully assessed.
+Request a targeted photo of that plant if needed. Also always request
+closer photos when the separate whole-plant limit below is exceeded.
+
 Request another photograph when:
 
 - Important identifying characteristics are missing.
-- A plant is partially hidden.
+- A clearly distinct plant is hidden enough that its visible features
+  cannot support a meaningful identification. Minor overlap or cropping
+  at the frame edge is not enough.
 - The image is blurry, dark, or too distant.
 - Similar-looking species cannot be distinguished.
 - Multiple plants cannot be reliably separated.
 - More than {max_separate_plants} separate whole plants are visible outside a bouquet.
-- Identification remains uncertain.
+- Identification cannot be meaningfully resolved from the visible
+  features; uncertainty alone is not a reason for a follow-up.
 
 When requesting another photograph:
 

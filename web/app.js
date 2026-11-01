@@ -120,7 +120,9 @@ function showAvailability(data) {
   const title = document.createElement("strong");
   title.textContent = "Live plant analysis is temporarily unavailable";
   const message = document.createElement("p");
-  message.textContent = data.code === "quota_exceeded"
+  message.textContent = data.code === "lifetime_quota_exceeded"
+    ? "The demo's lifetime analysis limit has been reached. Thanks for trying PetSafe Plants."
+    : data.code === "quota_exceeded"
     ? "Today's analysis quota has been reached. Please try again later."
     : "Live analysis is paused. You can still explore the site and sample photos.";
   banner.append(title, message);
@@ -825,7 +827,7 @@ async function compare() {
       if (museOnly && response.status === 405)
         throw new Error("The running API does not have the Muse investigation route yet. Recreate the API container with: docker compose up -d --force-recreate --no-deps api");
       const payload = await response.json();
-      if (["api_disabled", "quota_exceeded"].includes(payload.code)) {
+      if (["api_disabled", "quota_exceeded", "lifetime_quota_exceeded"].includes(payload.code)) {
         const error = new Error(payload.code);
         error.code = payload.code;
         throw error;
@@ -848,7 +850,7 @@ async function compare() {
     if (request !== requestGeneration || error.name === "AbortError") return;
     controller.abort();
     setInvestigationState("error");
-    if (["api_disabled", "quota_exceeded"].includes(error.code)) {
+    if (["api_disabled", "quota_exceeded", "lifetime_quota_exceeded"].includes(error.code)) {
       await refreshAvailability();
       return;
     }
@@ -1058,6 +1060,7 @@ const stateTitles = {
 };
 const questions = [
   "How many distinct plant types are visible?",
+  "Is there a clearly focused plant?",
   "Is this a mixed bouquet?",
   "Could another plant be partially hidden?",
   "Would closer inspection reveal more detail?",
@@ -1464,7 +1467,9 @@ function handlePipelineEvent(event, data) {
       item.status.textContent = "See details ↗";
       item.button.setAttribute("aria-label",
         `Inspect specimen ${item.displayIndex}: ${item.caption.textContent}. ${riskDescription}`);
-      placeSpecimens();
+      // SAM's regional response may change card text and size, but keep the
+      // user's established placement stable while updating the close marker.
+      positionSpecimenControls(item);
       if (
         inspectedSpecimen === String(data.object_id) &&
         byId("specimen-dialog").open
@@ -1472,6 +1477,7 @@ function handlePipelineEvent(event, data) {
         inspectSpecimen(inspectedSpecimen);
       sceneAssessments.push(data.assessment);
       updateSafety();
+      if (summaryPanelOpen) showSceneCard(sceneAssessments[0]);
       if (data.assessment.another_photo_needed) updateFollowup(data.assessment);
     }
   }
@@ -2243,6 +2249,17 @@ function orderedPlantGroups(assessment) {
     (confidence[b.identification_confidence] || 0) -
     (confidence[a.identification_confidence] || 0));
 }
+function hasConflictingToxicityCandidates(groups) {
+  const confident = groups.filter((group) => group.identification_confidence === "high");
+  if (confident.length < 2) return false;
+  return [
+    (group) => group.toxicity?.toxicity_status,
+    (group) => group.toxicity?.dog_toxicity?.toxicity_status,
+  ].some((statusOf) => {
+    const statuses = new Set(confident.map(statusOf));
+    return statuses.has("toxic") && statuses.has("non_toxic");
+  });
+}
 function showInspection(assessment, imageUrl, imageAlt, heading, pendingMessage) {
   toxicityOpinionRequests.forEach((controller) => controller.abort());
   toxicityOpinionRequests.clear();
@@ -2271,6 +2288,10 @@ function showInspection(assessment, imageUrl, imageAlt, heading, pendingMessage)
     findings.append(element("p", "inspection-empty", pendingMessage));
   } else {
     const groups = orderedPlantGroups(assessment);
+    if (!wholePhoto && hasConflictingToxicityCandidates(groups)) {
+      findings.append(element("p", "scene-card-identity-caution",
+        "High-confidence matches for this specimen include both toxic and non-toxic plant types. A clear close-up photo may help distinguish them. Treat its toxicity as uncertain until the identity is resolved."));
+    }
     if (groups.length) {
       const highest = groups[0].identification_confidence;
       const tieCount = groups.filter((group) => group.identification_confidence === highest).length;
@@ -2455,7 +2476,6 @@ function updateFollowup(assessment) {
   byId("followup-instructions").textContent =
     instructions.join(" ") ||
     "More photographic evidence is needed to resolve this investigation.";
-  if (specimenRecords.size) requestAnimationFrame(placeSpecimens);
 }
 function archiveInvestigation() {
   if ((!lastReport && !sceneAssessments.length) || !selectedFile) return;

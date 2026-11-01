@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 DB_PATH = Path(os.getenv("PETSAFE_ADMIN_DB", "data/admin/admin.sqlite3"))
+LIFETIME_CALL_LIMIT = 1000
 
 
 class MetaUnavailable(RuntimeError):
@@ -57,7 +58,7 @@ def record_investigation() -> None:
 
 
 def reserve_call(kind: str) -> int:
-    """Atomically reserve one paid call against the rolling 24-hour limit."""
+    """Atomically reserve one paid call against daily and lifetime limits."""
     if kind not in {"spark", "sam"}:
         raise ValueError("Unknown Meta call type")
     with _connect() as db:
@@ -68,6 +69,9 @@ def reserve_call(kind: str) -> int:
         if not enabled:
             raise MetaUnavailable("api_disabled")
         now = time.time()
+        total_used = db.execute("SELECT COUNT(*) FROM calls").fetchone()[0]
+        if total_used >= LIFETIME_CALL_LIMIT:
+            raise MetaUnavailable("lifetime_quota_exceeded")
         used = db.execute(
             "SELECT COUNT(*) FROM calls WHERE created >= ?", (now - 86400,)
         ).fetchone()[0]
@@ -121,10 +125,13 @@ def stats() -> dict:
     total_cost = sum(row[3] or 0 for row in calls)
     recent_cost = sum(row[4] or 0 for row in calls)
     used = sum(row[2] or 0 for row in calls)
+    total_used = sum(row[1] for row in calls)
     return {
         "enabled": bool(enabled),
         "daily_limit": limit,
         "remaining": max(0, limit - used),
+        "lifetime_limit": LIFETIME_CALL_LIMIT,
+        "lifetime_remaining": max(0, LIFETIME_CALL_LIMIT - total_used),
         "investigations": {
             "total": investigations[0], "last_24h": investigations[1] or 0,
         },

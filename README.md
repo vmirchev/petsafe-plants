@@ -221,6 +221,8 @@ Each Meta attempt reserves a quota slot in SQLite before the request, including 
 
 Set `PETSAFE_DEMO_URL` to the public YouTube demo URL to show it alongside the GitHub project link when live analysis is unavailable. The rest of the website remains accessible. If the admin password or session secret is absent, `/admin` cannot issue a session; the API still uses the persisted call settings.
 
+A fixed lifetime cap also stops all new Meta requests after 1,000 paid Muse Spark and SAM call attempts combined. It is enforced in the same atomic reservation as the rolling limit and cannot be raised from the admin page. One uploaded image can use multiple paid calls, so the cap may be reached before 1,000 investigated images. Existing cached responses do not spend a call. The admin dashboard shows the remaining lifetime calls.
+
 The container currently targets CPU inference. The first build is large because it includes PyTorch, torchvision, and Transformers; first model use also downloads pretrained encoder weights into the cache volume.
 
 ## Evaluation

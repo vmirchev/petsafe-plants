@@ -1185,6 +1185,7 @@ html.motion-paused .scan-sweep { opacity: 0; }
 .early-hazard[hidden] { display: none; }
 .photo-guidance-actions button:disabled { opacity: .58; cursor: default; }
 .scene-card > strong { display: block; margin: 7px 0 4px; font: 21px/1.18 Georgia, serif; }
+.scene-card-identity-caution { margin: 8px 0; padding: 9px 11px; border-left: 3px solid #e2bd78; background: #765b2c33; color: #f3e6c5; font-size: 13px; line-height: 1.45; }
 .scene-card small { display: block; color: #d1ddc8; font-size: 12px; line-height: 1.4; }
 .scene-card .eyebrow { color: #d0c48b; }
 .scene-card[data-tone="hazard"] { border-left-color: #dc9278; }
@@ -1750,7 +1751,7 @@ button.animal-status:focus-visible { outline: 2px solid #e5d59b; outline-offset:
 .sample-gallery-heading strong { color: #e7efdc; font: 19px/1.2 Georgia, serif; }
 .sample-gallery-heading span, .sample-gallery > p { color: #aebfae; font-size: 11px; }
 .sample-gallery > p { margin: 9px 0 0; line-height: 1.5; }
-.sample-gallery-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.sample-gallery-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .sample-choice { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 8px; border: 1px solid #405c46; border-radius: 10px; background: #132b20; color: #e5edda; text-align: left; cursor: pointer; transition: border-color .2s, background .2s, transform .2s; }
 .sample-choice:hover:not(:disabled), .sample-choice:focus-visible { border-color: #b6d29a; background: #203c2b; transform: translateY(-2px); }
 .sample-choice:focus-visible { outline: 2px solid #e5d59b; outline-offset: 2px; }
@@ -1760,7 +1761,7 @@ button.animal-status:focus-visible { outline: 2px solid #e5d59b; outline-offset:
 @media (max-width: 640px) {
   .sample-gallery-heading { display: block; }
   .sample-gallery-heading span { display: block; margin-top: 4px; }
-  .sample-gallery-grid { gap: 7px; }
+  .sample-gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
   .sample-choice { display: block; padding: 5px; }
   .sample-choice img { width: 100%; height: 68px; }
   .sample-choice span { display: block; padding: 5px 2px 2px; font-size: 10px; }

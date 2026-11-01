@@ -148,6 +148,10 @@ def load_uploaded_image(data: bytes) -> tuple[Image.Image, bytes]:
         raise ValueError(f"Image exceeds the {MAX_UPLOAD_BYTES // (1024 * 1024)} MB upload limit.")
     try:
         with Image.open(io.BytesIO(data)) as opened:
+            if opened.format not in {"JPEG", "PNG", "WEBP"}:
+                raise ValueError("Upload a JPEG, PNG, or WebP image.")
+            if getattr(opened, "n_frames", 1) != 1:
+                raise ValueError("Upload a single-frame image, not an animation or multi-page file.")
             image = ImageOps.exif_transpose(opened).convert("RGB")
     except (UnidentifiedImageError, OSError) as exc:
         raise ValueError("Upload a readable JPEG, PNG, or WebP image.") from exc
@@ -668,8 +672,16 @@ async def segment_and_assess(
         assessment = await assess_with_spark(
             crop_bytes,
             "This is a transparent-background crop of a SAM-selected plant region. "
-            "Assess only visible plant types in this crop and preserve uncertainty.",
+            "Assess only visible plant types in this crop and preserve uncertainty. "
+            "The crop omits scene context, so do not request another photograph "
+            "or infer where this plant is relative to other plants. "
+            "The whole-scene assessment decides whether a follow-up photo is needed.",
         )
+        assessment = assessment.model_copy(update={
+            "another_photo_needed": False,
+            "photo_instructions": "",
+            "photo_reason": "",
+        })
         segments.append(SegmentAssessment(
             object_id=candidate.object_id,
             bounds=candidate.bounds,
