@@ -1192,6 +1192,8 @@ html.motion-paused .scan-sweep { opacity: 0; }
 .scene-card[data-tone="hazard"] > strong { color: #ffd5bd; }
 .scene-card[data-tone="unknown"] { border-left-color: #c9b982; }
 .scene-card-list { display: grid; gap: 6px; min-height: 0; max-height: 210px; margin: 11px 0 0; padding: 0 4px 0 0; overflow-y: auto; list-style: none; scrollbar-color: #809b78 #1b3325; }
+.floating-specimen { scrollbar-width: none; -ms-overflow-style: none; }
+.floating-specimen::-webkit-scrollbar { display: none; }
 .scene-card-list:focus-visible { outline: 2px solid #f0dfa6; outline-offset: 2px; }
 .scene-card-row { padding: 8px 9px; border: 1px solid #3d5943; border-radius: 8px; background: #1b3528; }
 .scene-card-row.is-locatable:hover, .scene-card-row.is-locatable:focus-visible { border-color: #d9c78f; background: #274633; }

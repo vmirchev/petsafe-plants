@@ -36,6 +36,17 @@ dev = ["jupyterlab>=4", "ipykernel>=6", "pytest>=8", "ruff>=0.9"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/petsafe"]
 
+# The deployed API runs CPU inference. Resolve PyTorch from its CPU wheel index
+# so Docker does not download unused NVIDIA CUDA libraries.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 

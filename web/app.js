@@ -1018,6 +1018,7 @@ let summaryPanelOpen = false;
 let sceneCardMinimized = false;
 let followupMinimized = false;
 let followupAnnounced = false;
+let mobileSummaryAutoOpened = false;
 let samResponded = false;
 let selectedRegionCount = 0;
 let lastReport = null;
@@ -1352,6 +1353,7 @@ function resetReport() {
   sceneCardMinimized = false;
   followupMinimized = false;
   followupAnnounced = false;
+  mobileSummaryAutoOpened = false;
   samResponded = false;
   selectedRegionCount = 0;
   byId("region-progress").hidden = true;
@@ -1501,6 +1503,11 @@ function handlePipelineEvent(event, data) {
     if (followupRequest) updateFollowup(followupRequest);
   }
   if (Object.hasOwn(stateTitles, event)) setInvestigationState(event);
+  if (!shouldAutoOpenSpecimens() && followupAnnounced && followupMinimized &&
+      !mobileSummaryAutoOpened && (samResponded || event === "completed")) {
+    mobileSummaryAutoOpened = true;
+    showSummaryPanel();
+  }
   if (event === "completed" && (summaryPanelOpen ||
       els.photoGuidance.hidden && els.photoGuidanceRestore.hidden))
     showSceneCard(data.muse_spark_flow);
@@ -1619,6 +1626,7 @@ function showSceneCard(assessment) {
     back.addEventListener("click", () => {
       summaryPanelOpen = false;
       sceneCardMinimized = false;
+      if (hasFollowup) followupMinimized = false;
       card.hidden = true;
       byId("scene-card-restore").hidden = true;
       byId("scene-card-link").classList.remove("visible");
@@ -2250,13 +2258,12 @@ function orderedPlantGroups(assessment) {
     (confidence[a.identification_confidence] || 0));
 }
 function hasConflictingToxicityCandidates(groups) {
-  const confident = groups.filter((group) => group.identification_confidence === "high");
-  if (confident.length < 2) return false;
+  if (groups.length < 2) return false;
   return [
     (group) => group.toxicity?.toxicity_status,
     (group) => group.toxicity?.dog_toxicity?.toxicity_status,
   ].some((statusOf) => {
-    const statuses = new Set(confident.map(statusOf));
+    const statuses = new Set(groups.map(statusOf));
     return statuses.has("toxic") && statuses.has("non_toxic");
   });
 }
@@ -2290,7 +2297,7 @@ function showInspection(assessment, imageUrl, imageAlt, heading, pendingMessage)
     const groups = orderedPlantGroups(assessment);
     if (!wholePhoto && hasConflictingToxicityCandidates(groups)) {
       findings.append(element("p", "scene-card-identity-caution",
-        "High-confidence matches for this specimen include both toxic and non-toxic plant types. A clear close-up photo may help distinguish them. Treat its toxicity as uncertain until the identity is resolved."));
+        "Possible matches for this specimen include both toxic and non-toxic listings for cats or dogs. A clear close-up photo may help distinguish them. Treat its toxicity as uncertain until the identity is resolved."));
     }
     if (groups.length) {
       const highest = groups[0].identification_confidence;
@@ -2427,6 +2434,7 @@ function updateSafety() {
 }
 function updateFollowup(assessment) {
   if (!assessment.another_photo_needed) return;
+  if (!followupAnnounced && !shouldAutoOpenSpecimens()) followupMinimized = true;
   followupAnnounced = true;
   syncFollowupSummaryAction();
   const requests = [...new Set([...sceneAssessments, assessment])]

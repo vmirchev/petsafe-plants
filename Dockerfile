@@ -6,6 +6,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.13.6 /uv /uvx /bin/
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     UV_COMPILE_BYTECODE=1 \
+    UV_HTTP_TIMEOUT=300 \
     UV_LINK_MODE=copy \
     HF_HOME=/cache/huggingface \
     TORCH_HOME=/cache/torch \

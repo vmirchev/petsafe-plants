@@ -19,6 +19,12 @@ BOUQUET DETECTION
 
 DISTINCT PLANT DETECTION
 
+- First inventory the whole frame before naming any plants: inspect the
+  foreground, center, background, and gaps between prominent blooms.
+- In mixed bouquets, look specifically for small filler flowers, partially
+  covered blooms, and foliage that may belong to a different plant type.
+- Recheck the inventory after identifying the dominant flowers so a small
+  but visibly different type is not omitted.
 - Identify every visually distinct plant type in the photograph.
 - Count distinct plant types, NOT individual flowers, leaves,
   stems, or blossoms.
@@ -27,6 +33,8 @@ DISTINCT PLANT DETECTION
 - Several visually identical plants may belong to one group.
 - Separate visually different plant types into different groups.
 - Include distinct unidentified plant types as Unknown.
+- If a visible flower is clearly different but its identity is uncertain,
+  include an Unknown group and recommend inspection when useful.
 - Do not count different parts of the same plant as separate types.
 - Do not invent plants hidden behind visible objects.
 - Set distinct_plant_count equal to the number of plant_groups.
@@ -115,31 +123,15 @@ ADDITIONAL PHOTO DECISION
 Determine whether another photograph would materially improve
 plant identification.
 
-If one main flower or plant is clearly focused and its visible features
-support a useful identification, assess it from this photo. Flowers or
-leaves cropped by the image edges do not, by themselves, require another
-photo. Do not treat edge fragments as separate plant types unless visible
-evidence clearly shows they belong to a different type. Do not request
-another photo merely to improve confidence or obtain a perfect view of
-the main plant; report any remaining uncertainty in its identification.
-
-The exception is a clearly distinct plant whose important identifying
-features are genuinely obscured, so it cannot be meaningfully assessed.
-Request a targeted photo of that plant if needed. Also always request
-closer photos when the separate whole-plant limit below is exceeded.
-
 Request another photograph when:
 
 - Important identifying characteristics are missing.
-- A clearly distinct plant is hidden enough that its visible features
-  cannot support a meaningful identification. Minor overlap or cropping
-  at the frame edge is not enough.
+- A plant is partially hidden.
 - The image is blurry, dark, or too distant.
 - Similar-looking species cannot be distinguished.
 - Multiple plants cannot be reliably separated.
+- Identification remains uncertain.
 - More than {max_separate_plants} separate whole plants are visible outside a bouquet.
-- Identification cannot be meaningfully resolved from the visible
-  features; uncertainty alone is not a reason for a follow-up.
 
 When requesting another photograph:
 
